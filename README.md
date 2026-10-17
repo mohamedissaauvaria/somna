@@ -16,6 +16,8 @@ up to date while you sleep.
 Everything runs on your Mac: plain Markdown files in a git repo, a small Python script, launchd and
 the Claude Code CLI you already use. No servers, no accounts, no extra services.
 
+<p align="center"><img src="docs/somna-demo.gif" alt="Somna review page: running a cycle, live progress, answering a question and seeing what was saved" width="100%"></p>
+
 > Somna is an independent open-source project. It is not affiliated with or endorsed by Anthropic.
 > Claude and Claude Code are trademarks of Anthropic.
 
