@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/somna-banner.png" alt="Somna, memory that rests overnight" width="100%"></p>
+
 # Somna
 
 **Memory that rests overnight.** Somna gives Claude Code a curated memory on your Mac and keeps it

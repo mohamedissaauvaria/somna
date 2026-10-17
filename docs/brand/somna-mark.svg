@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Somna">
+<title>Somna</title>
+<rect width="512" height="512" rx="112" fill="#0E1630"/>
+<g fill="#E8E2C9" opacity=".5"><circle cx="128" cy="112" r="3.2"/><circle cx="214" cy="84" r="2.2"/><circle cx="96" cy="384" r="2.4"/><circle cx="420" cy="396" r="2.2"/></g>
+<g transform="translate(14 36)"><path d="M112.0 170.0 L148.9 170.0 L148.9 240.4 L185.7 240.4 L185.7 284.4 L222.6 284.4 L222.6 346.0 L259.4 346.0 L259.4 214.0 L296.3 214.0 L296.3 284.4 L333.1 284.4 L333.1 170.0 L370.0 170.0" fill="none" stroke="#F2C94C" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="392.0" cy="112.0" r="24" fill="#E8E2C9"/></g>
+</svg>
