@@ -1,0 +1,23 @@
+{
+  "model": "",
+  "map_model": "",
+  "claude_bin": "",
+  "default_since_hours": 24,
+  "max_sessions": 100,
+  "max_memory_kb": 1024,
+  "max_digest_kb_per_session": 40,
+  "timeout_minutes": 30,
+  "max_budget_usd": null,
+  "map_max_budget_usd": null,
+  "per_client_runs": true,
+  "context_max_chars": 7000,
+  "remap_after_commits": 40,
+  "allowed_tools": "Read,Edit,Write,Glob,Grep",
+  "restrict_tools": true,
+  "no_session_persistence": true,
+  "extra_claude_args": [],
+  "exclude_project_patterns": ["somna-worktrees"],
+  "auto_close_empty": true,
+  "notify": true,
+  "ui_port": 4747
+}

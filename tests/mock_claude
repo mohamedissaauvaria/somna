@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Stand-in for the Claude Code CLI. Behaves like a cycle or map run, can misbehave on request."""
+import json, os, pathlib, re, sys, time
+
+a = sys.argv[1:]
+if a[:2] == ["auth", "status"]:
+    print(json.dumps({"loggedIn": True, "authMethod": "claude.ai"})); sys.exit(0)
+if "-p" in a and a[a.index("-p") + 1] == "Reply with exactly the word OK.":
+    m = a[a.index("--model") + 1] if "--model" in a else "claude-opus-5-5"
+    assert a[a.index("--tools") + 1] == "" and "--max-turns" in a
+    if m in os.environ.get("MOCK_BADMODELS", "").split(","):
+        print(json.dumps({"type": "result", "is_error": True, "result": "There's an issue with the selected model"})); sys.exit(1)
+    print(json.dumps({"type": "result", "is_error": False, "result": "OK", "modelUsage": {m if m not in ("opus", "sonnet") else "claude-" + m + "-5-5": {}}}))
+    sys.exit(0)
+STREAM = a[a.index("--output-format") + 1] == "stream-json"
+if STREAM:
+    assert "--verbose" in a, "stream-json needs --verbose"
+MODEL = a[a.index("--model") + 1] if "--model" in a else "default"
+_n = [0]
+
+
+def emit(o):
+    print(json.dumps(o), flush=True)
+
+
+def step(tool=None, inp=None, text=None):
+    _n[0] += 1
+    content = []
+    if text:
+        content.append({"type": "text", "text": text})
+    if tool:
+        content.append({"type": "tool_use", "id": "t%d" % _n[0], "name": tool, "input": inp or {}})
+    if STREAM:
+        emit({"type": "assistant", "message": {"id": "msg_%d" % _n[0], "content": content,
+              "usage": {"input_tokens": 1000, "output_tokens": 50, "cache_read_input_tokens": 200}}})
+        if os.environ.get("MOCK_STEP_DELAY"):
+            time.sleep(float(os.environ["MOCK_STEP_DELAY"]))
+
+
+def finish(result, cost, turns, is_error=False):
+    o = {"type": "result", "subtype": "error_during_execution" if is_error else "success", "is_error": is_error,
+         "result": result, "total_cost_usd": cost, "num_turns": turns,
+         "usage": {"input_tokens": 1000 * _n[0], "output_tokens": 50 * _n[0]}}
+    emit(o)
+
+
+if STREAM:
+    emit({"type": "system", "subtype": "init", "model": MODEL})
+for flag in ("-p", "--output-format", "--permission-mode", "--allowedTools", "--tools", "--no-session-persistence"):
+    assert flag in a, "missing flag " + flag
+prompt = a[a.index("-p") + 1]
+mode = os.environ.get("MOCK_MODE", "change")
+log = pathlib.Path(os.environ["HOME"]) / "mock-calls.log"
+with open(log, "a") as fh:
+    fh.write(json.dumps({"max_turns": a[a.index("--max-turns") + 1] if "--max-turns" in a else None, "budget": a[a.index("--max-budget-usd") + 1] if "--max-budget-usd" in a else None, "cwd": os.getcwd(), "tools": a[a.index("--tools") + 1], "perm": a[a.index("--permission-mode") + 1],
+                         "kind": "map" if prompt.startswith("MAP REPO") else "cycle", "model": MODEL,
+                         "instructions": re.search(r"<instructions>\n(.*?)\n</instructions>", prompt, re.S).group(1) if "<instructions>" in prompt else None}) + "\n")
+
+if os.environ.get("MOCK_SLOW"):
+    time.sleep(float(os.environ["MOCK_SLOW"]))
+
+if prompt.startswith("MAP REPO"):
+    if mode == "mapfail":
+        print("map crashed", file=sys.stderr); sys.exit(4)
+    assert a[a.index("--tools") + 1] == "Read,Glob,Grep", "map must be read-only"
+    name = re.search(r"^# (\S+) \(", prompt, re.M).group(1)
+    doc = ("# {n} (client)\n## What this repo does\nTerraform for the shop stack.\n## How to navigate it\n- `envs/` one root per account\n"
+           "## How it connects\n- deploys to the web account\n## Current state\n- migration wave 2\n## Gotchas and decisions\n- pin aws ~> 5.0\n"
+           "## Questions for the owner\n- The README mentions Globex. Is this really a Acme repo?\n").format(n=name)
+    step("Read", {"file_path": os.path.join(os.getcwd(), "main.tf")}, "Reading the repo")
+    step("Glob", {"pattern": "**/*.tf"})
+    finish(doc, 0.31, 9)
+    sys.exit(0)
+
+if mode == "fail":
+    print("simulated engine crash: auth expired", file=sys.stderr); sys.exit(3)
+group = re.search(r"\(group id: (\S+)\)", prompt).group(1)
+if mode == "failclient" and group != "general":
+    print("client part crashed", file=sys.stderr); sys.exit(5)
+report = pathlib.Path(re.search(r"Write a report to (\S+) with", prompt).group(1))
+mem = pathlib.Path(re.search(r"Working copy of memory \(you may edit it\): (\S+)", prompt).group(1))
+step("Read", {"file_path": str(mem / "index.md")}, "Verifying memory against the sessions")
+if os.environ.get("MOCK_IS_ERROR"):
+    finish("broken", 0.01, 1, is_error=True); sys.exit(0)
+if mode != "nochange":
+    if group == "general":
+        general_file = mem / "work" / "releases.md"
+        step("Edit", {"file_path": str(general_file)})
+        general_file.write_text(general_file.read_text().rstrip() + "\n- General lesson {}\n".format(int(time.time() * 1000)))
+        if os.environ.get("MOCK_VIOLATE"):
+            (mem / "clients" / "acme" / "leak.md").parent.mkdir(parents=True, exist_ok=True)
+            (mem / "clients" / "acme" / "leak.md").write_text("general run wrote into a client folder\n")
+    else:
+        for ctx, inbox in re.findall(r"context `([^`]+)`, inbox `([^`]+)`", prompt):
+            c, i = pathlib.Path(ctx), pathlib.Path(inbox)
+            notes = [l for l in (i.read_text().splitlines() if i.exists() else []) if l.startswith("- ")]
+            base = c.read_text() if c.exists() else "# {}\n## Current state\n".format(c.stem)
+            c.parent.mkdir(parents=True, exist_ok=True)
+            step("Edit", {"file_path": str(c)}, "Merging inbox lines")
+            c.write_text(base.rstrip() + "\n" + "\n".join(notes + ["- cycle {} update".format(group)]) + "\n")
+            if i.exists():
+                i.write_text("\n".join(l for l in i.read_text().splitlines() if not l.startswith("- ")) + "\n")
+        if os.environ.get("MOCK_VIOLATE"):
+            p = mem / "me" / "preferences.md"
+            p.write_text(p.read_text() + "- leaked client fact from {}\n".format(group))
+            (mem / "clients" / "other-client.md").write_text("cross-client leak\n")
+    if not os.environ.get("MOCK_TIDY"):
+        pathlib.Path("README.md").write_text("tampered\n")
+dm = re.search(r"Also write (\S+) as JSON", prompt)
+dmode = os.environ.get("MOCK_DECISIONS", "normal")
+if dm and dmode != "none" and mode != "nochange":
+    decs = []
+    if group == "general":
+        decs.append({"file": "memory/work/releases.md", "type": "insight", "summary": "general lesson", "confidence": "high",
+                     "evidence": ["a1", "b1"], "applied": True})
+    else:
+        for ctx, inbox in re.findall(r"context `([^`]+)`, inbox `([^`]+)`", prompt):
+            rel = "memory/" + ctx.split("/memory/", 1)[1]
+            decs.append({"file": rel, "type": "merged", "summary": "inbox merged", "confidence": "high" if dmode != "skipone" else "medium",
+                         "evidence": ["a1"], "applied": True})
+        if dmode == "skipone":
+            decs = decs[1:]
+    if dmode == "dates" and group != "general":
+        ctxs = re.findall(r"context `([^`]+)`, inbox", prompt)
+        cf = "memory/" + ctxs[0].split("/memory/", 1)[1] if ctxs else "memory/clients/%s/context.md" % group
+        decs.append({"file": cf, "type": "new", "summary": "compliance items open", "confidence": "low", "evidence": ["fd53301b"],
+                     "evidence_dates": ["2026-09-27"], "applied": False, "proposed": "Open: audit log retention"})
+        if os.environ.get("MOCK_COMMIT"):
+            decs.append({"file": cf, "type": "replaced", "summary": "old commit says state bucket in us-east-1", "confidence": "low",
+                         "evidence": [os.environ["MOCK_COMMIT"]], "applied": False, "proposed": "State bucket: us-east-1"})
+        decs.append({"file": cf, "type": "new", "summary": "from an old session", "confidence": "low", "evidence": ["old1"],
+                     "applied": False, "proposed": "Old session fact"})
+        decs.append({"file": cf, "type": "new", "summary": "fresh but unsure", "confidence": "low", "evidence": ["a1"],
+                     "applied": False, "proposed": "Maybe Terragrunt soon"})
+        decs.append({"file": "memory/work/aws-access.md", "type": "insight", "summary": "general AWS lesson", "confidence": "low",
+                     "evidence": ["a1"], "scope": "general", "applied": False, "proposed": "Check aws sts get-caller-identity before each block of work"})
+        pathlib.Path(dm.group(1)).write_text(json.dumps({"decisions": decs}))
+        decs = None
+    held_file = decs[0]["file"] if decs else "memory/work/releases.md"
+    if decs is not None: decs.append({"file": held_file, "type": "new", "summary": "maybe moving to Terragrunt", "confidence": "low",
+                 "evidence": ["a1"], "applied": dmode == "lowapplied", "proposed": "Moving to Terragrunt is being discussed"})
+    if decs is not None:
+        pathlib.Path(dm.group(1)).write_text(json.dumps({"decisions": decs}))
+report.write_text("## Summary\nUpdated {}.\n## Changes\n- something\n## Noticed but not changed\n- none\n## Questions for the owner\n- none\n".format(group))
+finish("done", 0.12, 7)

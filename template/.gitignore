@@ -1,0 +1,5 @@
+# local working areas, never committed
+.somna-worktrees/
+cycles/
+logs/
+.DS_Store

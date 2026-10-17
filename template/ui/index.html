@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Somna</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Crect width=%2724%27 height=%2724%27 rx=%276%27 fill=%27%230E1630%27/%3E%3Cpath d=%27M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5Z%27 fill=%27%23F2C94C%27/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#F4F2EA; --blob1:rgba(242,201,76,.22); --blob2:rgba(124,140,245,.16); --blob3:rgba(59,75,200,.20);
+  --glass:rgba(255,255,255,.62); --glass-2:rgba(255,255,255,.78); --glass-line:rgba(14,22,48,.10); --glass-hi:rgba(255,255,255,.7);
+  --shadow:0 10px 30px rgba(14,22,48,.10); --text:#0E1630; --muted:#474F6E; --dim:#666E8C; --line-2:rgba(14,22,48,.06);
+  --indigo:#3B4BC8; --gold:#F2C94C; --gold-ink:#6B5310; --sky:#4F5FD6;
+  --add-bg:rgba(46,160,90,.14); --add-fg:#1E5A31; --del-bg:rgba(220,60,60,.13); --del-fg:#8F2323; --warn-bg:rgba(242,201,76,.16);
+  --chip:rgba(255,255,255,.55); --ink:#0E1630;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0A1024; --blob1:rgba(242,201,76,.20); --blob2:rgba(124,140,245,.18); --blob3:rgba(59,75,200,.30);
+    --glass:rgba(255,255,255,.06); --glass-2:rgba(255,255,255,.10); --glass-line:rgba(255,255,255,.12); --glass-hi:rgba(255,255,255,.10);
+    --shadow:0 12px 34px rgba(0,0,0,.35); --text:#EEF0F8; --muted:#BFC6E0; --dim:#949DBE; --line-2:rgba(255,255,255,.07);
+    --indigo:#9FAAF5; --gold-ink:#F6D77A; --sky:#A9B4FA;
+    --add-bg:rgba(80,200,120,.16); --add-fg:#A6EBBD; --del-bg:rgba(255,90,90,.16); --del-fg:#FFB4B4; --warn-bg:rgba(242,201,76,.18);
+    --chip:rgba(255,255,255,.08)}
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--text);font:15px/1.5 var(--sans);background:transparent}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;
+  background:radial-gradient(40vmax 34vmax at 85% 8%,var(--blob1),transparent 70%),
+             radial-gradient(38vmax 32vmax at 8% 40%,var(--blob2),transparent 70%),
+             radial-gradient(46vmax 40vmax at 60% 100%,var(--blob3),transparent 70%),var(--bg)}
+button{font:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.glass{background:var(--glass);border:1px solid var(--glass-line);border-radius:18px;box-shadow:var(--shadow),inset 0 1px 0 var(--glass-hi);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}
+header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 26px;color:#fff;background:linear-gradient(110deg,rgba(14,22,48,.86),rgba(27,37,80,.78));border-bottom:1px solid rgba(242,201,76,.55);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%)}
+.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand b{font-size:22px;letter-spacing:-.02em;color:#E8E2C9}
+.brand .mark{flex:none;align-self:center}
+.brand span{color:#E8E2C9}
+.brand small{color:#B3BAD6;font-size:12px}
+.hdr-right{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);font-size:13px;color:#fff;font-family:inherit;cursor:pointer;transition:background-color .18s,transform .14s}
+button.pill:hover{background:rgba(255,255,255,.22)} button.pill:active{transform:scale(.97)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--gold);animation:ping 2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(242,201,76,.55)}70%{box-shadow:0 0 0 9px rgba(242,201,76,0)}100%{box-shadow:0 0 0 0 rgba(242,201,76,0)}}
+
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border-radius:12px;
+  border:1px solid var(--glass-line);background:var(--glass-2);color:var(--text);font-weight:550;letter-spacing:.005em;
+  box-shadow:0 1px 0 var(--glass-hi) inset,0 2px 8px rgba(14,22,48,.06);
+  transition:transform .14s ease,box-shadow .18s ease,background-color .18s ease,border-color .18s ease;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.btn:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(59,75,200,.35);box-shadow:0 1px 0 var(--glass-hi) inset,0 8px 20px rgba(14,22,48,.14)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.97);box-shadow:0 1px 0 var(--glass-hi) inset,0 2px 6px rgba(14,22,48,.12)}
+.btn:disabled{opacity:.55}
+.btn.primary{border:none;color:#0E1630;background:linear-gradient(135deg,#F8E08E 0%,#F2C94C 55%,#E0B23A 100%);font-weight:650;
+  box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 6px 18px rgba(242,201,76,.35)}
+.btn.primary:hover:not(:disabled){box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 10px 26px rgba(242,201,76,.5);border:none}
+.btn.ghost{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.30);color:#fff;box-shadow:none}
+.btn.ghost:hover:not(:disabled){background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5);box-shadow:0 8px 22px rgba(0,0,0,.25)}
+.btn.link{border:none;background:transparent;box-shadow:none;color:var(--indigo);padding:0 8px;min-height:36px}
+.btn.link:hover:not(:disabled){box-shadow:none;text-decoration:underline}
+.btn.is-busy{color:transparent!important;pointer-events:none}
+.btn.is-busy::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;border:2px solid;border-color:rgba(14,22,48,.25) rgba(14,22,48,.25) rgba(14,22,48,.85) rgba(14,22,48,.85);animation:spin .8s linear infinite}
+.btn.ghost.is-busy::after{border-color:rgba(255,255,255,.3) rgba(255,255,255,.3) #fff #fff}
+@media (prefers-color-scheme: dark){.btn.is-busy:not(.primary)::after{border-color:rgba(255,255,255,.25) rgba(255,255,255,.25) #fff #fff}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+nav{position:sticky;top:64px;z-index:4;display:flex;flex-wrap:wrap;gap:6px;margin:16px auto 0;max-width:1200px;padding:6px;width:calc(100% - 40px)}
+nav button{min-height:40px;padding:0 16px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--text);font-weight:550;transition:background-color .18s,transform .14s}
+nav button:hover{background:var(--line-2)}
+nav button:active{transform:scale(.97)}
+nav button[aria-current="page"]{background:linear-gradient(135deg,#0E1630,#26337A);color:#fff;box-shadow:0 6px 16px rgba(14,22,48,.35)}
+@media (prefers-color-scheme: dark){nav button[aria-current="page"]{background:linear-gradient(135deg,#EEF0F8,#D8DCF0);color:#0E1630;box-shadow:0 6px 18px rgba(0,0,0,.3)}}
+nav .count{display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--gold);color:#0E1630;font-size:12px;font-weight:700}
+main{max-width:1240px;margin:0 auto;padding:22px 20px 140px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:30px;letter-spacing:-.02em;line-height:1.15}
+h2{margin:0;font-size:18px}
+.sub{margin:0;color:var(--muted);font-size:14px}
+.card{padding:20px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.between{justify-content:space-between}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{padding:14px 16px}
+.tile .k{font-size:13px;color:var(--muted)}
+.tile .v{font-size:23px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+.tile .s{font-size:12.5px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:18px;align-items:start}
+.chip{display:inline-block;padding:3px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--glass-line);font-size:13px}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;vertical-align:middle}
+.b-review{background:var(--warn-bg);color:var(--gold-ink)}
+.b-adopted{background:var(--add-bg);color:var(--add-fg)}
+.b-failed{background:var(--del-bg);color:var(--del-fg)}
+.b-muted{background:var(--line-2);color:var(--muted)}
+.b-running{background:rgba(59,75,200,.15);color:var(--indigo)}
+.b-canceled{background:var(--line-2);color:var(--muted);text-decoration:line-through}
+.banner{padding:14px 16px;border-radius:14px;border:1px solid var(--glass-line)}
+.banner.ok{background:var(--add-bg);color:var(--add-fg);border-color:transparent}
+.banner.warn{background:var(--warn-bg);color:var(--gold-ink);border-color:transparent}
+.banner.bad{background:var(--del-bg);color:var(--del-fg);border-color:transparent}
+.banner.info{background:var(--glass)}
+.md h3{margin:14px 0 6px;font-size:16px}
+.md h3:first-child{margin-top:0}
+.md p{margin:6px 0}
+.md ul{margin:6px 0;padding-left:20px}
+code{font-family:var(--mono);font-size:13px;background:var(--line-2);padding:1px 5px;border-radius:6px}
+.diff-file{border:1px solid var(--glass-line);border-radius:12px;overflow:hidden;margin-top:12px;background:rgba(255,255,255,.04)}
+.diff-file:first-child{margin-top:0}
+.diff-name{padding:7px 12px;background:var(--line-2);font:500 13px var(--mono)}
+.diff-body{overflow-x:auto;font:13px/1.6 var(--mono)}
+.dl{padding:0 12px;white-space:pre}
+.dl.add{background:var(--add-bg);color:var(--add-fg)}
+.dl.del{background:var(--del-bg);color:var(--del-fg)}
+.dl.ctx{color:var(--dim)}
+.dl.hunk{color:var(--indigo)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;position:sticky;bottom:14px;padding:14px 16px;z-index:3}
+.actions .note{margin-left:auto;font-size:13px;color:var(--muted);max-width:400px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:13px;padding:10px 14px;border-bottom:1px solid var(--glass-line)}
+td{padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tr.click{cursor:pointer;transition:background-color .15s}
+tr.click:hover td{background:var(--line-2)}
+.scroll{overflow-x:auto}
+.mono{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.files{flex:1 1 260px;max-width:340px;display:flex;flex-direction:column;gap:2px;padding:8px}
+.files button,.repo-btn{transition:background-color .15s,transform .12s}
+.files button{display:flex;justify-content:space-between;gap:8px;text-align:left;min-height:38px;padding:6px 10px;border:none;border-radius:10px;background:transparent;color:var(--text);font:13px var(--mono)}
+.files button:hover{background:var(--line-2)}
+.files button:active,.repo-btn:active{transform:scale(.98)}
+.files button[aria-current="true"]{background:linear-gradient(135deg,#0E1630,#26337A);color:#fff}
+@media (prefers-color-scheme: dark){.files button[aria-current="true"]{background:linear-gradient(135deg,#EEF0F8,#D8DCF0);color:#0E1630}}
+.grp{font:600 12px var(--sans);color:var(--dim);padding:10px 10px 2px;text-transform:uppercase;letter-spacing:.05em}
+.viewer{flex:999 1 460px;min-width:0}
+pre.file{margin:0;padding:16px;border-radius:12px;background:var(--line-2);border:1px solid var(--glass-line);font:13px/1.7 var(--mono);white-space:pre-wrap;word-break:break-word}
+textarea{width:100%;min-height:420px;padding:14px;border-radius:12px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--text);font:13px/1.7 var(--mono);resize:vertical}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.check{display:flex;gap:12px;align-items:flex-start;padding:14px 16px}
+.ico{flex:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.ico.ok{background:var(--add-bg);color:var(--add-fg)} .ico.warn{background:var(--warn-bg);color:var(--gold-ink)} .ico.fail{background:var(--del-bg);color:var(--del-fg)}
+.check p{margin:0} .check .d{font-size:13px;color:var(--muted);word-break:break-word}
+.bar{height:10px;border-radius:999px;background:var(--line-2);overflow:hidden;margin-top:8px}
+.bar>div{height:100%;border-radius:999px;background:linear-gradient(90deg,#3B4BC8,#7C8CF5,#F2C94C)}
+.empty ol{padding-left:20px;margin:10px 0 0}
+select,.filters input,.form-row input{min-height:40px;border-radius:11px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--text);padding:0 10px;font:14px var(--sans);max-width:100%}
+select{font:13px var(--mono)}
+.pick{max-width:100%;min-width:0;flex-wrap:nowrap}.pick select{min-width:0;width:100%;max-width:440px}
+.lvl{display:inline-block;min-width:52px;text-align:center;padding:1px 8px;border-radius:999px;font:600 11.5px var(--sans);text-transform:uppercase}
+.lvl.error{background:var(--del-bg);color:var(--del-fg)} .lvl.warn{background:var(--warn-bg);color:var(--gold-ink)}
+.lvl.info{background:var(--line-2);color:var(--muted)} .lvl.debug{color:var(--dim)}
+.logs td{font-size:13px} .logs td.t{white-space:nowrap;color:var(--muted);font:12px var(--mono)}
+.logs details summary{cursor:pointer;color:var(--indigo);font-size:12px}
+.logs pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-word;font:12px var(--mono);color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px}
+.repo-layout{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.repo-list{flex:1 1 320px;max-width:440px;display:flex;flex-direction:column;gap:4px;padding:10px}
+.repo-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:52px;padding:8px 10px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text);width:100%}
+.repo-btn:hover{background:var(--line-2)}
+.repo-btn[aria-current="true"]{border-color:rgba(59,75,200,.45);background:var(--line-2)}
+.repo-btn .n{font-weight:650} .repo-btn .p{font:12px var(--mono);color:var(--muted);word-break:break-all}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.repo-detail{flex:999 1 460px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;font-size:14px;margin:12px 0 0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;word-break:break-all}
+.q{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--warn-bg);color:var(--gold-ink);font-size:14px}
+.q.err{background:var(--del-bg);color:var(--del-fg)} .q.w{background:var(--line-2);color:var(--muted)}
+.q .qb{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.q .qa{display:flex;flex-wrap:wrap;gap:8px}
+.q .btn{min-height:36px;padding:0 14px;font-size:14px}
+.form-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fade{animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+#dock{position:fixed;right:20px;bottom:20px;z-index:8;width:min(440px,calc(100vw - 32px));padding:16px 18px;border-radius:20px;
+  transform:translateY(16px);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;background:var(--glass-2)}
+#dock.show{opacity:1;transform:none;pointer-events:auto}
+#dock .top{display:flex;gap:12px;align-items:center}
+#dock .t{font-weight:700;font-size:15px}
+#dock .st{font-size:13px;color:var(--muted)}
+#dock .meter{height:10px;border-radius:999px;background:var(--line-2);overflow:hidden;margin:12px 0 6px}
+#dock .meter>div{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#3B4BC8,#7C8CF5,#F2C94C,#3B4BC8);background-size:300% 100%;
+  transition:width .8s cubic-bezier(.2,.8,.2,1);animation:flow 3s linear infinite}
+@keyframes flow{to{background-position:-300% 0}}
+#dock .meta{display:flex;justify-content:space-between;font:12px var(--mono);color:var(--muted)}
+#dock .steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#dock .stp{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--glass-line);color:var(--dim)}
+#dock .stp.done{background:var(--add-bg);color:var(--add-fg);border-color:transparent}
+#dock .stp.active{background:rgba(59,75,200,.16);color:var(--indigo);border-color:transparent}
+#dock .feed{margin-top:10px;font:12px/1.5 var(--mono);color:var(--muted)}
+#dock .feed div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dock .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+#dock.done .meter>div{animation:none}
+.orb{flex:none;width:44px;height:44px}
+.orb .moon{fill:url(#mg)}
+.orb .spark{fill:#F8E08E;transform-box:fill-box;transform-origin:center;animation:twinkle 1.6s ease-in-out infinite}
+.orb .s2{animation-delay:.5s} .orb .s3{animation-delay:1s}
+.orb .pen{fill:none;stroke:#F2C94C;stroke-width:2.2;stroke-linecap:round;stroke-dasharray:46;stroke-dashoffset:46;animation:write 1.8s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes write{0%{stroke-dashoffset:46;opacity:1}60%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+#dock.done .spark,#dock.done .pen{animation:none} #dock.done .pen{stroke-dashoffset:0;opacity:1;stroke:#2EA05A}
+#dock .feed .tg{display:inline-block;min-width:44px;margin-right:6px;padding:0 6px;border-radius:6px;font:600 10.5px var(--sans);text-transform:uppercase;text-align:center;background:var(--line-2);color:var(--muted)}
+#dock .feed .tg.r{background:rgba(59,75,200,.14);color:var(--indigo)} #dock .feed .tg.w{background:var(--warn-bg);color:var(--gold-ink)}
+#dock .feed .say{font-family:var(--sans);font-style:italic}
+#dock .ops{font:12px var(--mono);color:var(--muted);margin-top:4px}
+#sheetWrap{position:fixed;inset:0;z-index:10;background:rgba(10,16,36,.42);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 24px;overflow:auto;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#sheet{width:min(660px,100%);padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--glass-2);animation:fade .2s ease}
+#sheet fieldset{border:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 18px}
+#sheet legend{font-weight:600;margin-bottom:6px;padding:0}
+#sheet .opt{display:flex;gap:8px;align-items:center;min-height:36px;cursor:pointer}
+.fl{font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+textarea.small{min-height:96px}
+.slist{max-height:min(340px,45vh);overflow:auto;display:flex;flex-direction:column;gap:2px;border:1px solid var(--glass-line);border-radius:12px;padding:6px;margin-top:8px}
+.srow{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:10px;cursor:pointer}
+.srow:hover{background:var(--line-2)} .srow input{margin-top:4px;flex:none}
+.srow .tl{word-break:break-word} .srow .m{font:12px var(--mono);color:var(--muted)}
+.decs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.dec{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:baseline;padding:10px 12px;border-radius:12px;background:var(--line-2)}
+.dec.held{background:var(--warn-bg)} .dec.bad{background:var(--del-bg)}
+.dec .f{font:12.5px var(--mono);color:var(--muted);word-break:break-all}
+.dec .sm{flex:1 1 100%;font-size:14px} .dec .ev{font:12px var(--mono);color:var(--dim)}
+.dec .qa{display:flex;gap:8px;flex:1 1 100%} .dec .btn{min-height:34px;padding:0 12px;font-size:13px}
+.hq{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-height:22px;padding:0;margin-left:6px;border-radius:50%;
+  border:1px solid var(--glass-line);background:var(--glass-2);color:var(--indigo);font:700 12px var(--sans);cursor:pointer;vertical-align:middle;flex:none}
+.hq:hover{background:var(--indigo);color:#fff} header .hq{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff}
+#pop{position:absolute;z-index:12;max-width:min(380px,calc(100vw - 32px));padding:14px 16px;border-radius:14px;font-size:14px;line-height:1.5;background:var(--glass-2);color:var(--text);box-shadow:var(--shadow)}
+#pop strong{display:block;margin-bottom:4px}
+#dock .info{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
+.steps-list{display:flex;flex-direction:column;gap:10px}
+.stepc{display:flex;gap:14px;align-items:flex-start;padding:14px 16px}
+.stepc .num{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--line-2);color:var(--muted)}
+.stepc.done .num{background:var(--add-bg);color:var(--add-fg)} .stepc.next{outline:2px solid rgba(242,201,76,.55)}
+.stepc .b{flex:1;min-width:0} .stepc h3{margin:0;font-size:16px} .stepc p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.stepc .d{font:12px var(--mono);color:var(--dim);margin-top:4px;word-break:break-all}
+.stepc .btn{min-height:38px}
+.set{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:10px 18px;align-items:center}
+.set label.k{font-weight:600;display:flex;align-items:center}
+.set .v{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}
+.set input[type=number],.set input[type=time],.set input[type=text],.set select{min-height:40px;border-radius:11px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--text);padding:0 10px;font:14px var(--sans);max-width:100%}
+.set input[type=number]{width:120px}
+.set select[data-model]{min-width:0;width:100%;max-width:460px;flex:1 1 220px;text-overflow:ellipsis}
+.set .hint{font-size:12.5px;color:var(--muted);flex:1 1 100%}
+.daychips{display:flex;flex-wrap:wrap;gap:6px}
+.daychips label{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--glass-line);background:var(--glass-2);font-size:13px;cursor:pointer}
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px}
+.chk{font-size:12.5px} .chk.ok{color:var(--add-fg)} .chk.bad{color:var(--del-fg)}
+.savebar{position:sticky;bottom:14px;z-index:3;display:flex;gap:10px;align-items:center;padding:12px 16px}
+@media (max-width:640px){.set{grid-template-columns:1fr}}
+.sumcard{display:flex;flex-direction:column;gap:10px;padding:16px 18px}
+.sumrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.sumrow .t{flex:1 1 320px;min-width:0}
+.sumrow .btn{min-height:36px;padding:0 14px;font-size:14px}
+.vlist td{font-size:13px} .vlist .btn{min-height:32px;padding:0 12px;font-size:13px}
+.trow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line-2)}
+.trow:first-of-type{border-top:none}
+.trow code{flex:1 1 320px;word-break:break-all;padding:6px 8px}
+.ops2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ops2 ul{margin:6px 0 0;padding-left:18px;font:12.5px var(--mono);color:var(--muted)} .ops2 li{word-break:break-all}
+#toast{position:fixed;left:50%;top:84px;transform:translateX(-50%);max-width:min(560px,92vw);padding:12px 18px;border-radius:14px;color:#fff;
+  background:rgba(14,22,48,.92);box-shadow:0 10px 30px rgba(0,0,0,.25);display:none;z-index:9;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#toast.bad{background:rgba(143,35,35,.95)}
+@media (max-width:640px){header{padding:12px 16px} nav{top:auto;position:static} .actions{position:static} .actions .note{margin-left:0} #dock{right:16px;bottom:16px}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg class="mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="#F2C94C"/><circle cx="17.5" cy="5.5" r="1.3" fill="#E8E2C9"/></svg><b>somna</b><span>memory that rests overnight</span><small>127.0.0.1 · this Mac only · v__SOMNA_VERSION__</small></div>
+  <div class="hdr-right">
+    <button id="pendingPill" class="pill" type="button" hidden title="Open the proposal waiting for review"><span class="dot"></span><span id="pendingText"></span></button>
+    <button id="runBtn" class="btn ghost" type="button">Run cycle now</button><button class="hq" type="button" data-help="run" aria-label="What does Run cycle now do?">?</button>
+    <button id="helpBtn" class="btn ghost" type="button">Help</button>
+  </div>
+</header>
+<nav aria-label="Sections" class="glass">
+  <button type="button" data-tab="start">Start here<span class="count" id="cntStart" hidden></span></button>
+  <button type="button" data-tab="review">Review<span class="count" id="cntReview" hidden></span></button>
+  <button type="button" data-tab="questions">Questions<span class="count" id="cntQuestions" hidden></span></button>
+  <button type="button" data-tab="repos">Repos<span class="count" id="cntRepos" hidden></span></button>
+  <button type="button" data-tab="history">History</button>
+  <button type="button" data-tab="memory">Memory</button>
+  <button type="button" data-tab="logs">Logs</button>
+  <button type="button" data-tab="health">Health</button>
+  <button type="button" data-tab="settings">Settings</button>
+</nav>
+<main id="main"><p class="sub">Loading…</p></main>
+
+<section id="dock" class="glass" role="status" aria-live="polite" aria-label="Job progress">
+  <div class="top">
+    <svg class="orb" viewBox="0 0 48 48" aria-hidden="true">
+      <defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B4BC8"/><stop offset=".6" stop-color="#7C8CF5"/><stop offset="1" stop-color="#F2C94C"/></linearGradient></defs>
+      <path class="moon" d="M30 7a17 17 0 1 0 11 29 14 14 0 1 1-11-29z"/>
+      <path class="spark" d="M36 8l1.2 2.8L40 12l-2.8 1.2L36 16l-1.2-2.8L32 12l2.8-1.2z"/>
+      <circle class="spark s2" cx="42" cy="22" r="1.8"/>
+      <circle class="spark s3" cx="31" cy="20" r="1.4"/>
+      <path class="pen" d="M10 40c4-3 7 2 11-1s6-4 10-1 6 1 9-1"/>
+    </svg>
+    <div style="min-width:0;flex:1"><div class="t" id="dTitle">Running</div><div class="st" id="dStep">Starting</div></div>
+  </div>
+  <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Progress" id="dMeter"><div id="dBar"></div></div>
+  <div class="info" id="dInfo"></div>
+  <div class="meta"><span id="dPct">0%</span><span id="dTime"></span></div>
+  <div class="ops" id="dOps"></div>
+  <div class="steps" id="dSteps"></div>
+  <div class="feed" id="dFeed"></div>
+  <div class="acts"><button class="btn link" type="button" id="dLogs">Open logs</button><button class="btn" type="button" id="dCancel" hidden>Cancel run</button><button class="hq" type="button" data-help="cancel" aria-label="Help: Cancel run">?</button><button class="btn" type="button" id="dHide">Hide</button><button class="btn primary" type="button" id="dOpen" hidden>Open</button></div>
+</section>
+<div id="sheetWrap" hidden>
+  <section id="sheet" class="glass" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+    <div class="row between"><h2 id="shTitle" style="font-size:20px">Run a cycle</h2><button class="btn link" type="button" id="shClose">Close</button></div>
+    <div><label class="fl" for="shInstr"><span>Instructions for this cycle</span><span class="sub" id="shCount">0 / 4,096</span></label>
+      <textarea id="shInstr" class="small" maxlength="4096" spellcheck="true" placeholder="Optional. What to focus on, what to keep as it is, how to write. For example: Focus on the checkout work. Keep the decision list as it is."></textarea>
+      <p class="sub" style="margin-top:4px">For this run only. Your standing rules stay in engine/steering.md.</p></div>
+    <div class="form-row"><label class="fl" for="shModel" style="min-width:60px">Model</label><select id="shModel" style="flex:1 1 240px"></select></div>
+    <fieldset><legend>Sessions to read</legend>
+      <label class="opt"><input type="radio" name="shSrc" value="since" checked> New since the last cycle</label>
+      <label class="opt"><input type="radio" name="shSrc" value="pick"> Choose sessions</label></fieldset>
+    <div id="shPick" hidden>
+      <div class="row between"><span class="sub" id="shSel">0 selected · 1 to 100</span>
+        <label class="row" style="gap:6px"><span class="sub">From the last</span><select id="shDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option><option value="90">90 days</option></select></label></div>
+      <div class="slist" id="shList"><p class="sub" style="padding:8px">Loading…</p></div>
+    </div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" type="button" id="shCancel">Cancel</button><button class="btn primary" type="button" id="shStart">Start cycle</button></div>
+  </section>
+</div>
+<div id="pop" class="glass" role="dialog" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const TOKEN = "__CYCLE_TOKEN__";
+const S = { tab: "review", data: null, sig: "", cycleId: null, detail: null, files: null, file: null, editing: false, autoPicked: false,
+  repos: null, repoSel: null, showClientForm: false, logs: null, logF: { level: "info", event: "", q: "", cycle: "" }, logsAuto: true,
+  prog: null, wasRunning: false, dockHidden: false, changelog: "" };
+const $ = (s, r) => (r || document).querySelector(s);
+const HELP = {
+  run: ["Run cycle now", "Starts a cycle right away. You can add instructions for this run, pick a model and choose which sessions to read. It reads your Claude Code sessions, curates each client in its own copy of memory and proposes changes. Usually 2 to 6 minutes. Nothing changes until you adopt."],
+  map: ["Map", "Reads this repo once with read-only tools (read, list, search) and writes its context file: what it does, how to navigate it, how it connects, current state, gotchas and open questions. Usually 1 to 3 minutes. The repo itself is never changed. The context becomes active when you adopt the proposal."],
+  scan: ["Scan past sessions", "Reads your Claude Code session files from the last 30 days to find the git repos you worked in. It does not call Claude and costs nothing."],
+  client: ["Clients", "A client groups its repos. Markers are words found in the client's folder names or git remotes, like acme or acme-corp. They drive suggestions and ownership checks. Each client's knowledge stays in its own folder."],
+  assign: ["Which client", "Tells Somna which client this repo belongs to. Confirming creates the repo's inbox, and from then on its context is added to every Claude Code session and subagent in this folder."],
+  context: ["Repo context", "One file per repo that every session in it starts with. Map writes the first version; nightly cycles keep it current from your sessions, the inbox and the git log."],
+  inbox: ["Inbox", "Agents add one dated line here when they learn something lasting about the repo. The nightly cycle merges the lines into the context and clears them."],
+  instructions: ["Instructions for agents", "Placed in front of the context when a session starts here. Tell agents how to use it, for example which folders to touch or what to ask before changing something."],
+  questions: ["Checks and questions", "Things Somna could not decide on its own, like whether a repo really belongs to a client. Answer with the buttons; answers are remembered."],
+  adopt: ["Adopt", "Merges the proposal into your memory after checking nobody changed memory since the run started, and records it in CHANGELOG.md. New sessions use it right away. Git keeps the old version."],
+  discard: ["Discard", "Deletes the proposal. Your memory stays exactly as it was."],
+  decisions: ["Decisions", "Every change comes with a confidence and the dates of its evidence. High: two or more sources, or something you said. Medium: one clear source. Low: inferred or weak, so it is held back for you. Accept queues it for the next cycle, in the place the button names; Dismiss drops it. Changes whose evidence is older than the current context are dropped automatically."],
+  trial: ["Try it before adopting", "Starts a Claude Code session in the repo that gets the proposed context instead of the current one. Use it to see if the proposal helps. Nothing is adopted."],
+  activity: ["Memory it read and wrote", "Which memory files Claude opened and changed during the run, from its own event stream."],
+  versions: ["Versions", "Every saved version of this file. If an old version held a secret or personal data, Redact removes its content from history. The record that the version existed stays."],
+  edit: ["Editing memory", "Saving commits the file, so it can always be undone. Agents cannot edit memory files themselves; only you and the cycle can."],
+  cancel: ["Cancel run", "Stops the run. Its partial output is deleted and memory stays as it was."],
+  logs: ["Logs", "Every decision Somna makes, with who caused it: schedule, page, terminal or hook. Use the filters to follow one run."],
+  nightly: ["Nightly cycle", "Runs on the days and at the time you pick and reads the sessions since the last cycle. If the Mac was asleep, it runs within 12 hours after it wakes."],
+  weekly: ["Weekly cycle", "A deeper pass once a week over the last days of sessions, usually with a stronger model, to merge what nightly runs missed and tidy up. It covers that night too."],
+  model: ["Model for cycles", "Used by nightly and manual cycles unless you pick another one in the run form. Check runs a one-line test through your Claude Code, which proves it works with your sign-in or provider."],
+  weekly_model: ["Model for the weekly cycle", "Often a stronger model than the nightly one, since it runs once a week."],
+  map_model: ["Model for Map", "Map reads a whole repo once. A capable model writes a better first context."],
+  models_source: ["Where the list comes from", "With an API key, from the Claude API Models endpoint. On Amazon Bedrock, from your inference profiles (ARNs). With a Claude account sign-in there is no API to ask, so the list is a built-in list of current Claude models. Check confirms the one you pick."],
+  max_budget_usd: ["Spend cap per run", "Claude Code stops a run once its estimated spend reaches this amount. Each client in a cycle is one run. Empty means no cap."],
+  map_max_budget_usd: ["Spend cap per map", "The same cap for Map runs."],
+  max_turns: ["Turn limit per run", "A turn is one round of Claude working (read a file, search, edit). The run stops with an error at this limit. Empty means no limit."],
+  timeout_minutes: ["Time limit per run", "A run that takes longer is stopped and reported as a timeout."],
+  max_sessions: ["Sessions per cycle", "At most this many sessions are read in one cycle, newest first. The limit is 100."],
+  parallel_runs: ["Clients at the same time", "How many client runs go in parallel. Each works in its own copy of memory. 1 runs them one after another."],
+  default_since_hours: ["First-run window", "When there is no earlier cycle, read sessions from this many hours back."],
+  max_memory_kb: ["Memory size limit", "A cycle refuses to run when memory is bigger than this, so runs stay fast and cheap. Each file should also stay under 100 kB."],
+  run_digest_budget_kb: ["Reading budget per client run", "How much session text Claude reads in one client run. Small sessions are read in full first, then the big ones share what is left. 400 KB is about 100k tokens."],
+  session_max_kb: ["Most one session can take", "The most of the budget a single session may use, so one very long session cannot crowd out the rest. Above this it is shortened: tool calls and long output first, your words and Claude's answers last. The full text stays available to Claude."],
+  stale_after_days: ["Clean up current state after", "The cycle removes \"Current state\" items whose as-of date is older than this, unless newer sessions or commits confirm them. Git keeps the history."],
+  dropped: ["Dropped as outdated", "Held changes whose newest evidence is older than the file's last update. The newer context wins, so they are not asked as questions. Listed here only so you can see what was left out."],
+  sessions_read: ["Sessions read", "Each session's size, and how much of it the cycle read. Shortened sessions kept your words and Claude's answers first; the full text was available to Claude."],
+  context_max_chars: ["Repo context size", "Target size of each repo context. The hook adds at most about 9,500 characters at session start."],
+  remap_after_commits: ["Re-map suggestion", "Suggest Re-map after this many commits in a repo since its last map."],
+  review_mode: ["Review mode", "Adopt automatically when safe: the cycle saves its changes into memory by itself when nothing looks wrong (every change medium or high confidence, nothing written outside its folders, every change has a reason, no part failed, you did not edit memory meanwhile). Anything else waits for you. Ask me for everything: every cycle waits for your Adopt."],
+  held_expiry_days: ["Questions expire after", "Questions you do not answer are dismissed after this many days, so the list does not grow forever."],
+  summary: ["What happened while you were away", "Cycles saved automatically since you last clicked Got it, cycles waiting for you and the reason, and how many questions are open. Undo puts memory back as it was before an automatic save."],
+  undo: ["Undo this adopt", "Puts memory back exactly as it was before this adopt, with a git revert. Git keeps every version. The next cycle reads those sessions again."],
+  questions_tab: ["Questions", "Changes Claude was not sure about, from all cycles. They were never saved. Accept sends one to the place the button names and the next cycle applies it; Dismiss drops it. Unanswered questions expire after a few days (Settings)."],
+  hold_low_confidence: ["Hold low-confidence changes", "When on, the cycle does not apply changes it is unsure about. They wait for your Accept or Dismiss."],
+  auto_close_empty: ["Close empty cycles", "A cycle that changes nothing closes itself instead of waiting for review."],
+  notify: ["Notifications", "A macOS notification when a cycle is ready or failed."],
+  stream_events: ["Live events", "Shows what Claude does while a run works. Turn off only if your Claude Code is too old for stream-json."],
+};
+const DOCK_INFO = {
+  cycle: "Reading your sessions and curating each client in its own copy of memory. Usually 2 to 6 minutes. You can close this page; nothing changes until you adopt.",
+  map: "Reading the repo with read-only tools to write its context file. Usually 1 to 3 minutes. The repo is not changed.",
+  scan: "Reading session files to find your repos. No Claude call, no cost.",
+};
+function hq(key) { return '<button class="hq" type="button" data-help="' + key + '" aria-label="Help: ' + esc((HELP[key] || [key])[0]) + '">?</button>'; }
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function api(path, body) {
+  const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json", "X-Somna-Token": TOKEN }, body: JSON.stringify(body) };
+  const r = await fetch(path, opt);
+  let j = {};
+  try { j = await r.json(); } catch (e) { j = { error: "bad response (" + r.status + ")" }; }
+  if (!r.ok) { const err = new Error(j.error || ("HTTP " + r.status)); err.code = j.code; throw err; }
+  return j;
+}
+let toastTimer;
+function toast(msg, bad) {
+  const t = $("#toast"); t.textContent = msg; t.className = bad ? "bad" : ""; t.style.display = "block";
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.style.display = "none"; }, bad ? 9000 : Math.max(4000, Math.min(12000, msg.length * 60)));
+}
+/* run an action with a busy button: the button shows a spinner, nothing else on the page moves */
+async function busy(btn, fn) {
+  if (btn) { btn.classList.add("is-busy"); btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+  try { return await fn(); }
+  finally { if (btn && document.body.contains(btn)) { btn.classList.remove("is-busy"); btn.disabled = false; btn.removeAttribute("aria-busy"); } }
+}
+function fmtTime(s) {
+  if (!s) return "";
+  return new Date(s).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+function fmtTok(n) { n = n || 0; return n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n); }
+function fmtDur(sec) { sec = Math.max(0, Math.round(sec || 0)); const m = Math.floor(sec / 60); return m ? m + "m " + (sec % 60) + "s" : sec + "s"; }
+function md(src) {
+  const lines = String(src || "").split("\n"); let out = "", inList = false, para = [];
+  const inline = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  const flush = () => { if (para.length) { out += "<p>" + inline(para.join(" ")) + "</p>"; para = []; } };
+  for (const l of lines) {
+    const m = l.match(/^(#{1,4})\s+(.*)$/);
+    if (m) { flush(); if (inList) { out += "</ul>"; inList = false; } out += "<h3>" + inline(m[2]) + "</h3>"; continue; }
+    const li = l.match(/^\s*[-*]\s+(.*)$/);
+    if (li) { flush(); if (!inList) { out += "<ul>"; inList = true; } out += "<li>" + inline(li[1]) + "</li>"; continue; }
+    if (!l.trim()) { flush(); if (inList) { out += "</ul>"; inList = false; } continue; }
+    if (inList) { out += "</ul>"; inList = false; }
+    para.push(l.trim());
+  }
+  flush(); if (inList) out += "</ul>";
+  return out || '<p class="sub">No report.</p>';
+}
+function diffHtml(patch) {
+  if (!patch || !patch.trim()) return '<p class="sub">No changes to memory.</p>';
+  const files = []; let cur = null;
+  for (const l of patch.split("\n")) {
+    if (l.startsWith("diff --git")) { const m = l.match(/ b\/(.+)$/); cur = { name: m ? m[1] : l, lines: [] }; files.push(cur); continue; }
+    if (!cur || l.startsWith("index ") || l.startsWith("--- ") || l.startsWith("+++ ") || l.startsWith("new file") || l.startsWith("deleted file") || l.startsWith("\\ No newline")) continue;
+    if (l.startsWith("@@")) { cur.lines.push(["hunk", "⋯"]); continue; }
+    const k = l[0] === "+" ? "add" : l[0] === "-" ? "del" : "ctx";
+    cur.lines.push([k, (k === "ctx" ? "  " : l[0] + " ") + l.slice(1)]);
+  }
+  return files.map((f) => '<div class="diff-file"><div class="diff-name">' + esc(f.name) + '</div><div class="diff-body">' +
+    f.lines.map(([k, t]) => '<div class="dl ' + k + '">' + esc(t) + "</div>").join("") + "</div></div>").join("");
+}
+function badge(d) {
+  if (d.status === "running" || d.status === "pending") return '<span class="badge b-running">Running</span>';
+  if (d.status === "failed" && !d.decision) return '<span class="badge b-failed">Failed</span>';
+  if (d.status === "canceled" || d.decision === "canceled") return '<span class="badge b-canceled">Canceled</span>';
+  if (d.needs_review) return '<span class="badge b-review">Waiting for you</span>';
+  if (d.undone) return '<span class="badge b-muted">Undone</span>';
+  if (d.auto && d.decision === "adopted") return '<span class="badge b-adopted">Saved automatically</span>';
+  const map = { adopted: ["b-adopted", "Adopted"], discarded: ["b-muted", "Discarded"], no_changes: ["b-muted", "No changes"],
+    nothing_to_do: ["b-muted", "No new sessions"], dry_run: ["b-muted", "Scan"] };
+  const m = map[d.decision] || ["b-muted", d.status];
+  return '<span class="badge ' + m[0] + '">' + esc(m[1]) + "</span>";
+}
+function tile(k, v, s) { return '<div class="tile glass"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div><div class="s">' + esc(s) + "</div></div>"; }
+
+/* ---------- data and rendering without page jumps ---------- */
+function signature(d) {
+  return JSON.stringify([d.pending, d.health.running_pid ? 1 : 0, d.cycles.slice(0, 40).map((x) => [x.id, x.status, x.decision, x.needs_review, x.undone]),
+    S.summary ? [S.summary.questions, S.summary.auto.map((x) => x.id), S.summary.blocked.map((x) => x.id), (S.summary.failed || []).map((x) => x.id)] : 0]);
+}
+function typing() { return ["INPUT", "SELECT", "TEXTAREA"].indexOf((document.activeElement || {}).tagName) >= 0; }
+function paint(html, keep) {
+  const y = window.scrollY, m = $("#main");
+  m.innerHTML = html;
+  if (!keep) { m.classList.remove("fade"); void m.offsetWidth; m.classList.add("fade"); }
+  else window.scrollTo(0, y);
+}
+async function loadState() {
+  const d = await api("/api/state");
+  S.data = d;
+  try { S.summary = await api("/api/summary"); } catch (e) { /* older server */ }
+  const ids = d.cycles.map((x) => x.id);
+  let picked = false;
+  if (!S.cycleId || ids.indexOf(S.cycleId) < 0 || (!S.autoPicked && d.pending.length)) {
+    S.cycleId = d.pending[0] || ids[0] || null; S.autoPicked = true; picked = true;
+  }
+  return picked;
+}
+async function loadDetail() {
+  if (!S.cycleId) { S.detail = null; return; }
+  try { S.detail = await api("/api/cycle?id=" + encodeURIComponent(S.cycleId)); } catch (e) { S.detail = null; }
+}
+async function refresh(keep) {
+  try { await loadState(); } catch (e) { paint('<div class="banner bad">Cannot reach cycle: ' + esc(e.message) + "</div>"); return; }
+  await loadDetail();
+  S.sig = signature(S.data);
+  renderHeader(); render(keep);
+}
+function renderHeader() {
+  const n = S.data.pending.length, run = S.data.health.running_pid || (S.prog && S.prog.running), nq = S.summary ? S.summary.questions : 0;
+  $("#pendingPill").hidden = !n && !nq;
+  $("#pendingText").textContent = [n ? n + " waiting for review" : "", nq ? nq + (nq === 1 ? " question" : " questions") : ""].filter(Boolean).join(" · ");
+  const cq = $("#cntQuestions"); cq.hidden = !nq; cq.textContent = nq;
+  const b = $("#runBtn"); if (!b.classList.contains("is-busy")) { b.disabled = !!run; b.textContent = run ? "Working…" : "Run cycle now"; }
+  const c = $("#cntReview"); c.hidden = !n; c.textContent = n;
+  const cs = $("#cntStart"); if (S.setup) { cs.hidden = S.setup.done >= S.setup.total; cs.textContent = S.setup.done + "/" + S.setup.total; }
+  document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-current", x.dataset.tab === S.tab ? "page" : "false"));
+}
+function render(keep) {
+  if (!S.data) return;
+  ({ start: viewStart, questions: viewQuestions, review: viewReview, repos: viewRepos, history: viewHistory, memory: viewMemory, logs: viewLogs, health: viewHealth, settings: viewSettings })[S.tab](keep);
+}
+async function goReview(id) { S.cycleId = id; S.tab = "review"; renderHeader(); await loadDetail(); render(false); window.scrollTo(0, 0); }
+
+/* ---------- summary of what happened while you were away ---------- */
+function summaryBanner() {
+  const M = S.summary;
+  if (!M || (!M.auto.length && !M.blocked.length && !M.questions && !(M.failed || []).length)) return "";
+  let h = '<section class="glass sumcard"><div class="row between"><h2>While you were away' + hq("summary") + '</h2><button class="btn link" type="button" data-sum="seen">Got it</button></div>';
+  if (M.auto.length) {
+    const ch = M.auto.reduce((a, x) => a + x.changes, 0), repos = [...new Set(M.auto.flatMap((x) => x.repos))];
+    h += '<div class="sumrow"><span class="badge b-adopted">Saved automatically</span><span class="t">' + ch + " change" + (ch === 1 ? "" : "s") +
+      (repos.length ? " in " + esc(repos.slice(0, 4).join(", ")) + (repos.length > 4 ? " and more" : "") : "") + (M.auto.length > 1 ? " from " + M.auto.length + " cycles" : "") + "</span>" +
+      '<button class="btn" type="button" data-sum="open" data-id="' + esc(M.auto[0].id) + '">See what changed</button>' +
+      '<button class="btn" type="button" data-sum="undo" data-id="' + esc(M.auto[0].id) + '">Undo</button>' + hq("undo") + "</div>";
+  }
+  (M.failed || []).forEach((b) => {
+    h += '<div class="sumrow"><span class="badge b-failed">Failed</span><span class="t">' + esc((b.type === "map" ? "A map" : "A cycle") + " failed: " + b.why) + '</span><button class="btn" type="button" data-sum="open" data-id="' + esc(b.id) + '">Open it</button></div>';
+  });
+  M.blocked.forEach((b) => {
+    h += '<div class="sumrow"><span class="badge b-review">Waiting for you</span><span class="t">' + esc(b.why.join("; ")) + '</span><button class="btn primary" type="button" data-sum="open" data-id="' + esc(b.id) + '">Review it</button></div>';
+  });
+  if (M.questions) h += '<div class="sumrow"><span class="badge b-running">Questions</span><span class="t">' + M.questions + (M.questions === 1 ? " question" : " questions") +
+    ' for you. Not saved until you accept.</span><button class="btn" type="button" data-sum="questions">Answer questions</button></div>';
+  return h + "</section>";
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest ? e.target.closest("[data-sum]") : null;
+  if (!b) return;
+  const k = b.dataset.sum;
+  if (k === "open") return goReview(b.dataset.id);
+  if (k === "questions") { S.tab = "questions"; renderHeader(); render(false); window.scrollTo(0, 0); return; }
+  if (k === "seen") return busy(b, async () => { try { await api("/api/summary_seen", {}); await loadState(); renderHeader(); render(true); } catch (err) { toast(err.message, true); } });
+  if (k === "undo") {
+    if (!confirm("Undo this automatic save? Memory goes back to how it was before it. Git keeps every version.")) return;
+    return busy(b, async () => { try { const j = await api("/api/undo", { id: b.dataset.id }); toast(j.message); await loadState(); await loadDetail(); renderHeader(); render(true); } catch (err) { toast(err.message, true); } });
+  }
+});
+
+/* ---------- Questions across cycles ---------- */
+async function viewQuestions(keep) {
+  let Q;
+  try { Q = (await api("/api/questions")).questions; } catch (e) { paint('<div class="banner bad">' + esc(e.message) + "</div>", keep); return; }
+  if (S.tab !== "questions") return;
+  const dest = (to) => !to ? "" : /^memory\/scratch\//.test(to) ? "general memory" : /_client\.md$/.test(to) ? "client context" : ((to.match(/([^/]+)\.md$/) || [])[1] || to) + " context";
+  const rows = Q.map((d) => '<div class="dec held"><span class="badge b-review">' + esc(d.confidence) + "</span><strong>" + esc(d.type) + "</strong>" +
+    (d.scope === "general" && d.group !== "general" ? '<span class="badge b-running">general lesson</span>' : "") +
+    '<span class="f">' + esc(d.group + " · " + d.file) + '</span><span class="sm">' + esc(d.summary) + (d.proposed ? ": " + esc(d.proposed) : "") + "</span>" +
+    '<span class="ev">evidence: ' + (d.evidence_count ? d.evidence_count + " (" + esc(d.evidence.join(", ")) + ")" : "none") + (d.evidence_newest ? " · newest evidence " + esc(d.evidence_newest) : "") +
+    " · from " + esc(fmtTime(d.created_at)) + " · expires in " + d.expires_in_days + " day" + (d.expires_in_days === 1 ? "" : "s") + "</span>" +
+    '<div class="qa"><button class="btn primary" type="button" data-qa="accept" data-id="' + esc(d.cycle) + '" data-i="' + d.index + '">Accept → ' + esc(dest(d.accept_to)) + "</button>" +
+    '<button class="btn" type="button" data-qa="dismiss" data-id="' + esc(d.cycle) + '" data-i="' + d.index + '">Dismiss</button>' +
+    '<button class="btn link" type="button" data-qa="open" data-id="' + esc(d.cycle) + '">Open its cycle</button></div></div>').join("");
+  paint(summaryBanner() + '<div class="row between"><div><h1>Questions' + hq("questions_tab") + '</h1><p class="sub" style="margin-top:6px">Changes Claude was not sure about. Nothing here is saved until you accept it.</p></div></div>' +
+    (rows ? '<div class="decs">' + rows + "</div>" : '<div class="glass card"><p class="sub">No open questions. Nothing needs you right now.</p></div>'), keep);
+  document.querySelectorAll("[data-qa]").forEach((b) => b.onclick = (e) => {
+    if (b.dataset.qa === "open") return goReview(b.dataset.id);
+    busy(e.currentTarget, async () => {
+      try { const j = await api("/api/decision", { id: b.dataset.id, index: +b.dataset.i, answer: b.dataset.qa }); toast(j.message); await loadState(); renderHeader(); viewQuestions(true); }
+      catch (err) { toast(err.message, true); }
+    });
+  });
+}
+
+/* ---------- Review ---------- */
+function viewReview(keep) {
+  if (!S.data.cycles.length) {
+    paint(summaryBanner() + '<div class="glass card empty"><h1>No cycles yet</h1><p class="sub" style="margin-top:6px">Here is how to get your first one:</p><ol>' +
+      "<li>Work in Claude Code as usual, starting each session inside its repo folder.</li>" +
+      "<li>Click <strong>Run cycle now</strong> above, or wait for the nightly run at 02:00.</li>" +
+      "<li>Review what it proposes here, then adopt or discard.</li></ol></div>", keep);
+    return;
+  }
+  const D = S.detail; if (!D) { paint('<p class="sub">Loading…</p>', keep); return; }
+  const s = D.summary, r = D.record;
+  const sess = (r.inputs.find((i) => i.type === "sessions") || {});
+  const repos = {}; (sess.sessions || []).forEach((x) => { repos[x.repo || "unknown"] = (repos[x.repo || "unknown"] || 0) + 1; });
+  const cost = r.usage && typeof r.usage.total_cost_usd === "number" ? "$" + r.usage.total_cost_usd.toFixed(2) : "n/a";
+  const tk = (r.usage && r.usage.tokens) || null, ktok = tk ? fmtTok((tk.input_tokens || 0) + (tk.cache_read_input_tokens || 0) + (tk.cache_creation_input_tokens || 0) + (tk.output_tokens || 0)) : "";
+  const changed = D.memory_changed_since || [], dirty = D.memory_dirty || [];
+  const opts = S.data.cycles.slice(0, 40).map((d) => '<option value="' + esc(d.id) + '"' + (d.id === s.id ? " selected" : "") + ">" +
+    esc(fmtTime(d.created_at) + " · " + (d.type === "map" ? "map " + ((d.repo || {}).name || "") + " · " : "") + (d.needs_review ? "waiting" : (d.decision || d.status))) + "</option>").join("");
+  const title = s.type === "map" ? "Repo context for " + esc((s.repo || {}).name || "") : (s.needs_review ? "Cycle waiting for review" : "Cycle");
+  let h = summaryBanner() + '<div class="row between"><div><p class="sub">' + esc(fmtTime(r.created_at)) + (r.ended_at ? " → " + esc(fmtTime(r.ended_at).split(", ").pop()) : "") +
+    "</p><h1>" + title + " " + badge(s) + '</h1></div><label class="row pick" style="gap:8px"><span class="sub">Show</span><select id="cycleSel">' + opts + "</select></label></div>";
+  h += '<div class="tiles">' +
+    (s.type === "map" ? tile("Repo", (s.repo || {}).name || "", (s.repo || {}).client || "") : tile("Sessions read", s.sessions, Object.keys(repos).length + " repo" + (Object.keys(repos).length === 1 ? "" : "s") + (s.selected_sessions ? " · chosen by you" : ""))) +
+    tile("Changes", s.diffstat && s.diffstat !== "no changes" ? s.diffstat.split(",")[0] : "None", s.diffstat || s.note || "") +
+    tile("Cost", cost, (r.usage && r.usage.num_turns ? r.usage.num_turns + " turns" : "from Claude Code") + (ktok ? " · " + ktok + " tokens" : "")) +
+    (s.decision_counts ? tile("Confidence", s.decision_counts.high + " high", s.decision_counts.medium + " medium · " + s.decision_counts.low + " low" + (s.decision_counts.held ? " · " + s.decision_counts.held + " held" : "") + (s.decision_counts.dropped ? " · " + s.decision_counts.dropped + " dropped as outdated" : "")) : "") +
+    (s.type === "map" || s.decision === "dry_run" || s.decision === "nothing_to_do" ? "" : tile("Model", String(s.model || "default").replace("claude-code-default", "Claude Code default"), s.instructions ? "with instructions" : "no instructions")) +
+    (s.needs_review ? tile("Memory since start", changed.length || dirty.length ? "Changed" : "Unchanged",
+      changed.length ? changed.join(", ") : dirty.length ? "unsaved: " + dirty.join(", ") : "safe to adopt") : "") + "</div>";
+  if (Object.keys(repos).length) h += '<div class="row"><span class="sub">Repos:</span>' + Object.keys(repos).sort().map((k) => '<span class="chip">' + esc(k) + " · " + repos[k] + "</span>").join("") + "</div>";
+  if (r.instructions) h += '<section class="glass card"><h2 style="margin-bottom:6px">Instructions for this cycle</h2><pre class="file" style="padding:12px">' + esc(r.instructions) + "</pre></section>";
+  if (r.status === "canceled" || s.decision === "canceled") h += '<div class="banner info"><strong>Canceled.</strong> The run was stopped and its partial output deleted. Memory was not changed.</div>';
+  const lim = r.limits || {};
+  if ((lim.output_over_100kb || []).length) h += '<div class="banner warn"><strong>Files over 100 kB in this proposal:</strong> ' + esc(lim.output_over_100kb.map((x) => x.path + " (" + x.kb + " kB)").join(", ")) + ". Split them before or after adopting.</div>";
+  if (r.status === "failed") h += '<div class="banner bad"><strong>This run failed' + (s.error_type ? " (" + esc(s.error_type) + ")" : "") + ".</strong> " + esc(s.error || "") +
+    (D.engine_log ? '<pre class="file" style="margin-top:10px;max-height:260px;overflow:auto">' + esc(D.engine_log) + "</pre>" : "") + "</div>";
+  if (r.status === "running" || r.status === "pending") h += '<div class="banner info">Working on it. Follow the progress in the panel at the bottom right.</div>';
+  if ((s.partial_failures || []).length) h += '<div class="banner warn"><strong>Some parts failed:</strong> ' + esc(s.partial_failures.join(", ")) + ". The rest is ready to review. See the run log below.</div>";
+  if (r.warning) h += '<div class="banner bad">' + esc(r.warning) + "</div>";
+  if (s.type === "map" && r.repo) h += '<div class="banner info">Read-only pass over <code>' + esc(r.repo.path) + "</code> for client <strong>" + esc(r.repo.client) + "</strong>. Nothing in the repo was changed.</div>";
+  if (r.guardrail) h += '<div class="banner warn">Guardrail reverted edits outside the allowed scope: ' + esc((r.guardrail.reverted_outside_scope || r.guardrail.reverted_outside_memory || []).join(", ")) + "</div>";
+  const dec = s.decision;
+  if (dec === "adopted" && !s.undone) h += '<div class="banner ok"><div class="row between"><span><strong>' + (s.auto ? "Saved automatically." : "Adopted.") + "</strong> New Claude Code sessions use it.</span>" +
+    '<span><button class="btn" type="button" data-sum="undo" data-id="' + esc(s.id) + '">Undo this adopt</button>' + hq("undo") + "</span></div></div>";
+  if (s.undone) h += '<div class="banner info"><strong>Undone.</strong> Memory was put back as it was before this adopt.</div>';
+  if (s.needs_review && (s.auto_blocked || []).length) h += '<div class="banner warn"><strong>Not saved automatically, waiting for you:</strong> ' + esc(s.auto_blocked.join("; ")) + "</div>";
+  if (dec === "discarded") h += '<div class="banner info"><strong>Discarded.</strong> Memory was left as it was.</div>';
+  if (dec === "no_changes") h += '<div class="banner info">' + (s.type === "map" ? "The context is already up to date." : "The cycle read your sessions and found nothing worth changing.") + "</div>";
+  if (dec === "nothing_to_do") h += '<div class="banner info">There were no new sessions to read.</div>';
+  if (dec === "dry_run") h += '<div class="banner info">Scan only: sessions were read and repos registered. Claude was not called.</div>';
+  const sl = sess.sessions || [], cut = sl.filter((x) => x.truncated);
+  if (cut.length) h += '<div class="banner warn"><strong>' + cut.length + " session" + (cut.length === 1 ? " was" : "s were") + " shortened to fit the reading budget.</strong> " +
+    "Your words and Claude's answers were kept first; Claude could open the full text when it needed detail. If this happens often, raise the budget in Settings.</div>";
+  if (sl.length && sl[0].size_kb != null) {
+    h += '<details class="glass card"' + (cut.length ? " open" : "") + '><summary><strong>Sessions read</strong>' + hq("sessions_read") + ' <span class="sub">' + sl.length + " · " +
+      (function (k) { return k < 10 ? k.toFixed(1) : Math.round(k); })(sl.reduce((a, x) => a + (x.size_kb || 0), 0)) + " KB</span></summary><div class=\"scroll\" style=\"margin-top:10px\"><table style=\"min-width:560px\"><thead><tr><th>Session</th><th>Repo</th><th>First activity</th><th>Last activity</th><th>Size</th><th>Read</th><th>Subagents</th></tr></thead><tbody>" +
+      sl.slice().sort((a, b) => String(a.last_activity || "").localeCompare(String(b.last_activity || ""))).map((x) => '<tr><td class="mono">' + esc(x.id) + "</td><td>" + esc(x.repo) + "</td><td>" + esc(fmtTime(x.first_activity)) + "</td><td>" + esc(fmtTime(x.last_activity)) + "</td><td>" + esc(x.size_kb + " KB · ~" + fmtTok(x.est_tokens)) + "</td><td>" +
+        (x.truncated ? '<span class="badge b-review">' + esc(x.read_pct + "%, shortened") + "</span>" : '<span class="badge b-adopted">all</span>') +
+        (x.already_read_until ? ' <span class="badge b-muted">earlier part already read</span>' : "") + "</td><td>" + (x.subagents || 0) + "</td></tr>").join("") + "</tbody></table></div></details>";
+  }
+  const allDecs = (r.decisions || []).map((d, i) => Object.assign({ i: i }, d));
+  const decs = allDecs.filter((d) => !d.dropped), dropped = allDecs.filter((d) => d.dropped);
+  const dest = (to) => !to ? "" : /^memory\/scratch\//.test(to) ? "general memory" : /_client\.md$/.test(to) ? "client context" : ((to.match(/([^/]+)\.md$/) || [])[1] || to) + " context";
+  const dline = (d) => (d.evidence_newest ? " · newest evidence " + d.evidence_newest : "") + (d.target_updated ? " · file updated " + d.target_updated : "");
+  if (decs.length) {
+    const rank = (d) => (!d.applied && !d.accepted_at && !d.dismissed_at) ? 0 : d.synthetic ? 1 : d.rule_broken ? 2 : !d.applied ? 6 : ({ low: 3, medium: 4, high: 5 })[d.confidence];
+    decs.sort((a, b) => rank(a) - rank(b));
+    const open = decs.filter((d) => rank(d) === 0).length;
+    const cb = { high: "b-adopted", medium: "b-running", low: "b-review" };
+    if (open) h += '<div class="banner warn"><strong>' + open + " low-confidence change" + (open === 1 ? " was" : "s were") + " held back.</strong> Accept the ones that are right and the next cycle applies them, or dismiss them.</div>";
+    h += '<section class="glass card"><div class="row between"><h2>Decisions' + hq("decisions") + '</h2><span class="sub">held and low confidence first</span></div><div class="decs">' + decs.map((d) => {
+      const held = !d.applied, ans = d.accepted_at ? "accepted, queued in " + d.accepted_to : d.dismissed_at ? "dismissed" : "";
+      const cls = held && !ans ? " held" : (d.synthetic || d.rule_broken) ? " bad" : "";
+      return '<div class="dec' + cls + '"><span class="badge ' + (cb[d.confidence] || "b-muted") + '">' + esc(d.confidence) + "</span><strong>" + esc(d.synthetic ? "no decision recorded" : d.type) + "</strong>" +
+        (held ? '<span class="badge b-muted">' + esc(ans || "held, not in the proposal") + "</span>" : "") +
+        (d.rule_broken ? '<span class="badge b-failed">applied although low confidence</span>' : "") +
+        (d.older_than_target && d.applied ? '<span class="badge b-failed">evidence older than the current context</span>' : "") +
+        (d.scope === "general" && d.group !== "general" ? '<span class="badge b-running">general lesson</span>' : "") +
+        '<span class="f">' + esc(d.group + " · " + d.file) + '</span><span class="sm">' + esc(d.summary) + (d.proposed && held ? ": " + esc(d.proposed) : "") + "</span>" +
+        '<span class="ev">evidence: ' + (d.evidence_count ? d.evidence_count + " (" + esc(d.evidence.join(", ")) + ")" : "none") + esc(dline(d)) + "</span>" +
+        (held && !ans && s.needs_review !== undefined ? '<div class="qa"><button class="btn primary" type="button" data-dec="accept" data-i="' + d.i + '">Accept → ' + esc(dest(d.accept_to)) + "</button>" + '<button class="btn" type="button" data-dec="dismiss" data-i="' + d.i + '">Dismiss</button></div>' : "") + "</div>";
+    }).join("") + "</div></section>";
+  }
+  if (dropped.length) {
+    h += '<details class="glass card"><summary><strong>Dropped as outdated</strong>' + hq("dropped") + ' <span class="sub">' + dropped.length + " held change" + (dropped.length === 1 ? "" : "s") +
+      " with evidence older than the current context, so they were not shown as questions</span></summary><div class=\"decs\">" +
+      dropped.map((d) => '<div class="dec"><span class="badge b-muted">' + esc(d.confidence) + "</span><strong>" + esc(d.type) + '</strong><span class="f">' + esc(d.group + " · " + d.file) + '</span><span class="sm">' + esc(d.summary) +
+        '</span><span class="ev">' + esc(d.drop_reason || "") + "</span></div>").join("") + "</div></details>";
+  }
+  if (r.status === "completed" || r.status === "failed") {
+    h += '<div class="cols"><section class="glass card md"><h2 style="margin-bottom:8px">Report</h2>' + md(D.report) + "</section>" +
+      '<section class="glass card"><div class="row between" style="margin-bottom:10px"><h2>Changes to memory</h2><span class="mono">main → proposal</span></div>' + diffHtml(D.diff) + "</section></div>";
+  }
+  const ma = D.memory_activity || { read: [], write: [] };
+  if (ma.read.length || ma.write.length) {
+    const li = (a) => a.length ? "<ul>" + a.map(([p, n]) => "<li>" + esc(p) + (n > 1 ? " ×" + n : "") + "</li>").join("") + "</ul>" : '<p class="sub">none</p>';
+    h += '<details class="glass card"><summary><strong>Memory it read and wrote</strong>' + hq("activity") + ' <span class="sub">' + ma.read.length + " read · " + ma.write.length + " written</span></summary>" +
+      '<div class="ops2" style="margin-top:10px"><div><strong>Read</strong>' + li(ma.read) + "</div><div><strong>Wrote</strong>" + li(ma.write) + "</div></div></details>";
+  }
+  if (s.needs_review && (D.try_targets || []).length) {
+    const mac = S.data.health.platform === "Darwin";
+    h += '<section class="glass card"><h2 style="margin-bottom:4px">Try it before adopting' + hq("trial") + '</h2><p class="sub" style="margin-bottom:6px">Starts a Claude Code session in the repo that gets this proposal as its context instead of the current one. Nothing is adopted until you click Adopt.</p>' +
+      D.try_targets.map((t, i) => '<div class="trow"><strong style="min-width:120px">' + esc(t.name) + "</strong><code>" + esc(t.command) + "</code>" +
+        '<button class="btn" type="button" data-copy="' + i + '">Copy</button>' + (mac ? '<button class="btn primary" type="button" data-term="' + i + '">Open in Terminal</button>' : "") + "</div>").join("") + "</section>";
+  }
+  if (D.run_log) h += '<details class="glass card"><summary><strong>Run log</strong> <span class="sub">every step of this run</span></summary><pre class="file" style="margin-top:10px;max-height:380px;overflow:auto">' + esc(D.run_log) + "</pre></details>";
+  if (s.needs_review) {
+    const force = changed.length > 0;
+    h += '<div class="actions glass">' +
+      (force ? '<button class="btn primary" type="button" data-act="force">Merge anyway</button>' : '<button class="btn primary" type="button" data-act="adopt">Adopt</button>') + hq("adopt") +
+      '<button class="btn" type="button" data-act="discard">Discard</button>' + hq("discard") +
+      '<span class="note">' + (force ? "Memory changed since this run started. Merge anyway keeps both, or discard and run again."
+        : "Adopt re-checks nobody changed memory since the run started, then merges and logs it in CHANGELOG.md.") + "</span></div>";
+  }
+  paint(h, keep);
+  $("#cycleSel").onchange = async (e) => { S.cycleId = e.target.value; await loadDetail(); render(false); };
+  document.querySelectorAll("[data-dec]").forEach((b) => b.onclick = (e) => busy(e.currentTarget, async () => {
+    try { const j = await api("/api/decision", { id: s.id, index: +b.dataset.i, answer: b.dataset.dec }); toast(j.message); await loadDetail(); render(true); } catch (err) { toast(err.message, true); }
+  }));
+  document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => {
+    const cmd = D.try_targets[+b.dataset.copy].command;
+    try { await navigator.clipboard.writeText(cmd); toast("Copied. Paste it in a terminal."); } catch (e) { window.prompt("Copy this command:", cmd); }
+  });
+  document.querySelectorAll("[data-term]").forEach((b) => b.onclick = (e) => busy(e.currentTarget, async () => {
+    try { const j = await api("/api/try", { id: s.id, path: D.try_targets[+b.dataset.term].path, open: true }); toast(j.message); } catch (err) { toast(err.message, true); }
+  }));
+  document.querySelectorAll("[data-act]").forEach((b) => b.onclick = () => act(b.dataset.act, s.id, b));
+}
+async function act(kind, id, btn) {
+  if (kind === "discard" && !confirm("Discard this proposal? Its changes will be deleted.")) return;
+  let ok = false;
+  await busy(btn, async () => {
+    try {
+      const j = await api(kind === "discard" ? "/api/discard" : "/api/adopt", { id: id, force: kind === "force" });
+      toast(j.message); S.repos = null; S.files = null; ok = true;
+    } catch (e) { toast(e.message, true); }
+  });
+  await refresh(true);
+  if (ok) loadRepos();
+}
+
+/* ---------- History ---------- */
+function viewHistory(keep) {
+  const rows = S.data.cycles.map((d) => '<tr class="click" data-id="' + esc(d.id) + '" tabindex="0"><td>' + esc(fmtTime(d.created_at)) + '</td><td class="mono">' +
+    esc(d.type === "map" ? "map · " + ((d.repo || {}).name || "") : d.id) + "</td><td>" + (d.type === "map" ? "" : d.sessions) + "</td><td>" + esc(d.error || d.diffstat || d.note || "") + "</td><td>" + badge(d) + "</td></tr>").join("");
+  paint('<h1>History</h1><div class="glass scroll" style="padding:0">' +
+    (rows ? "<table><thead><tr><th>When</th><th>Run</th><th>Sessions</th><th>What changed</th><th>Status</th></tr></thead><tbody>" + rows + "</tbody></table>"
+      : '<p class="sub" style="padding:20px">Nothing yet.</p>') +
+    '</div><section class="glass card"><h2 style="margin-bottom:8px">Changelog</h2><pre class="file" id="chlog">' + esc(S.changelog || "Loading…") + "</pre></section>", keep);
+  document.querySelectorAll("tr.click").forEach((tr) => {
+    tr.onclick = () => goReview(tr.dataset.id); tr.onkeydown = (e) => { if (e.key === "Enter") goReview(tr.dataset.id); };
+  });
+  api("/api/changelog").then((j) => { S.changelog = j.content || "Nothing adopted yet."; const c = $("#chlog"); if (c) c.textContent = S.changelog; }).catch(() => {});
+}
+
+/* ---------- Memory ---------- */
+async function openFile(path, quiet) { try { S.file = await api("/api/file?path=" + encodeURIComponent(path)); } catch (e) { if (!quiet) toast(e.message, true); } }
+async function viewMemory(keep) {
+  if (!S.files) {
+    if (!keep) paint('<p class="sub">Loading memory…</p>');
+    try { S.files = (await api("/api/memory")).files; } catch (e) { paint('<div class="banner bad">' + esc(e.message) + "</div>"); return; }
+  }
+  if (!S.file) { const idx = S.files.find((f) => f.path === "memory/index.md") || S.files[0]; if (idx) await openFile(idx.path, true); }
+  if (S.tab !== "memory") return;
+  const groups = {};
+  S.files.forEach((f) => { const parts = f.path.split("/"); const g = parts[0] === "engine" ? "engine" : (parts.length > 2 ? parts[1] : "memory"); (groups[g] = groups[g] || []).push(f); });
+  const base = ["memory", "me", "work", "clients", "inbox", "scratch", "engine"];
+  const order = base.concat(Object.keys(groups).filter((g) => base.indexOf(g) < 0));
+  const list = order.filter((g) => groups[g]).map((g) => '<div class="grp">' + esc(g) + "</div>" + groups[g].map((f) =>
+    '<button type="button" data-path="' + esc(f.path) + '" aria-current="' + (S.file && S.file.path === f.path) + '"><span>' + esc(f.path.replace(/^memory\//, "")) + "</span><span>" + f.kb + " KB</span></button>").join("")).join("");
+  const F = S.file, pending = S.data.pending.length > 0, scratchy = F && /^memory\/(scratch|inbox)\//.test(F.path);
+  let v = "";
+  if (F) {
+    v = '<div class="row between" style="margin-bottom:12px"><h2 class="mono" style="font-size:15px;color:var(--text)">' + esc(F.path) + '</h2><div class="row">' +
+      (S.editing ? hq("edit") + '<button class="btn" type="button" id="cancelEdit">Cancel</button><button class="btn primary" type="button" id="saveEdit">Save</button>'
+        : '<button class="btn" type="button" id="showVers" aria-expanded="' + !!S.showVersions + '">' + (S.showVersions ? "Hide versions" : "Versions") + "</button>" +
+          (/\.md$/.test(F.path) ? '<button class="btn" type="button" id="startEdit">Edit</button>' : "")) + "</div></div>";
+    if (S.editing && pending && !scratchy) v += '<div class="banner warn" style="margin-bottom:12px">A proposal is waiting for review. Saving this file means it will need "Merge anyway".</div>';
+    if (S.editing && S.conflict) v += '<div class="banner bad" style="margin-bottom:12px"><strong>This file changed while you were editing</strong> (a cycle or an agent saved a newer version). ' +
+      'Your text is still in the editor. <strong>Save</strong> again to replace the newer version with yours, or <strong>Cancel</strong> to drop your edit and see the newer version.' +
+      '<details style="margin-top:8px"><summary>Show the newer version</summary><pre class="file" style="margin-top:8px;max-height:260px;overflow:auto">' + esc(S.conflict.content) + "</pre></details></div>";
+    v += S.editing ? '<textarea id="editor" spellcheck="false" aria-label="File content"></textarea><p class="sub" style="margin-top:8px">Saving commits the file to your memory repo, so it can always be undone with Git.</p>'
+      : '<pre class="file">' + esc(F.content) + "</pre>";
+    if (!S.editing && S.showVersions) {
+      const V = S.versions && S.versions.path === F.path ? S.versions.versions : null;
+      v += '<div style="margin-top:16px"><h2 style="margin-bottom:4px">Versions' + hq("versions") + '</h2><p class="sub" style="margin-bottom:8px">Every saved version of this file. If an old version holds a secret or personal data, Redact scrubs it from history and keeps the record that it existed. The current version cannot be redacted: edit it first.</p>' +
+        (!V ? '<p class="sub">Loading…</p>' : !V.length ? '<p class="sub">Not committed yet.</p>' :
+          '<div class="scroll vlist"><table style="min-width:520px"><thead><tr><th>When</th><th>Version</th><th>Size</th><th>Change</th><th></th></tr></thead><tbody>' +
+          V.map((x) => "<tr><td>" + esc(fmtTime(x.at)) + '</td><td class="mono">' + esc(x.version) + "</td><td>" + (x.deleted ? "deleted" : (x.bytes + " B")) + "</td><td>" + esc(x.message) + "</td><td>" +
+            (x.current ? '<span class="badge b-adopted">current</span>' : x.redacted ? '<span class="badge b-muted">redacted</span>' : x.deleted ? "" :
+              '<button class="btn" type="button" data-redact="' + esc(x.version) + '">Redact</button>') + "</td></tr>").join("") + "</tbody></table></div>") + "</div>";
+    }
+  }
+  paint('<div class="row between"><h1>Memory</h1><span class="mono">' + esc(S.data.health.home) + "/memory · " + S.data.health.memory_kb + " KB</span></div>" +
+    '<div class="row" style="align-items:flex-start;gap:18px"><div class="glass files">' + list + '</div><div class="glass card viewer">' + v + "</div></div>", keep);
+  document.querySelectorAll(".files button").forEach((b) => b.onclick = async () => {
+    if (S.editing && !confirm("Leave without saving?")) return;
+    S.editing = false; S.conflict = null; S.draft = null; S.versions = null; await openFile(b.dataset.path); viewMemory(true);
+  });
+  if (S.editing) { $("#editor").value = S.draft != null ? S.draft : F.content; $("#editor").focus(); }
+  if ($("#startEdit")) $("#startEdit").onclick = (e) => busy(e.currentTarget, async () => {
+    await openFile(F.path, true); S.editing = true; S.conflict = null; viewMemory(true);
+  });
+  const loadVers = async () => { try { S.versions = await api("/api/versions?path=" + encodeURIComponent(F.path)); } catch (e) { S.versions = { path: F.path, versions: [] }; toast(e.message, true); } };
+  if ($("#showVers")) $("#showVers").onclick = async () => { S.showVersions = !S.showVersions; viewMemory(true); if (S.showVersions) { await loadVers(); viewMemory(true); } };
+  if (S.showVersions && F && (!S.versions || S.versions.path !== F.path)) loadVers().then(() => { if (S.tab === "memory" && !S.editing) viewMemory(true); });
+  document.querySelectorAll("[data-redact]").forEach((b) => b.onclick = (e) => {
+    if (!confirm("Redact version " + b.dataset.redact + " of " + F.path + "?\n\nThis rewrites the git history of your memory repo so that version's content is gone. The commit stays, with a note that it was redacted.")) return;
+    busy(e.currentTarget, async () => {
+      try { const j = await api("/api/redact", { path: F.path, version: b.dataset.redact }); toast(j.message); await loadVers(); await openFile(F.path, true); viewMemory(true); } catch (err) { toast(err.message, true); }
+    });
+  });
+  if ($("#cancelEdit")) $("#cancelEdit").onclick = async () => { S.editing = false; S.conflict = null; S.draft = null; await openFile(F.path, true); viewMemory(true); };
+  if ($("#saveEdit")) $("#saveEdit").onclick = (e) => busy(e.currentTarget, async () => {
+    try {
+      const mine = $("#editor").value;
+      const j = await api("/api/file", { path: F.path, content: mine, sha: S.conflict ? S.conflict.sha : F.sha });
+      toast(j.message); S.editing = false; S.conflict = null; S.draft = null; S.files = null; await openFile(F.path); await loadState(); viewMemory(true);
+    } catch (err) {
+      if (err.code === "stale") {
+        const mine = $("#editor").value;
+        let latest = null;
+        try { latest = await api("/api/file?path=" + encodeURIComponent(F.path)); } catch (e2) { /* keep going */ }
+        if (latest) { S.conflict = { sha: latest.sha, content: latest.content }; S.draft = mine; viewMemory(true); }
+        toast("Not saved yet: this file changed while you were editing. Your text is kept. Read the note above the editor.", true);
+      } else toast(err.message, true);
+    }
+  });
+}
+
+/* ---------- Repos ---------- */
+function repoTags(r) {
+  const t = [];
+  if (r.status === "confirmed") t.push('<span class="badge b-adopted">' + esc(r.client) + "</span>");
+  else if (r.status === "suggested") t.push('<span class="badge b-review">suggested: ' + esc(r.client) + "</span>");
+  else if (r.status === "ignored") t.push('<span class="badge b-muted">ignored</span>');
+  else t.push('<span class="badge b-review">unmapped</span>');
+  const qs = r.checks.filter((c) => c.level === "question" || c.level === "error").length;
+  if (qs) t.push('<span class="badge b-failed">' + qs + " to answer</span>");
+  if (r.inbox_lines) t.push('<span class="badge b-running">' + r.inbox_lines + " inbox</span>");
+  return t.join("");
+}
+async function loadRepos() {
+  try { S.repos = await api("/api/repos"); } catch (e) { return; }
+  const n = S.repos.repos.filter((r) => r.status !== "ignored" && r.checks.some((c) => c.level === "question" || c.level === "error")).length;
+  const c = $("#cntRepos"); c.hidden = !n; c.textContent = n;
+}
+async function viewRepos(keep) {
+  if (!S.repos) { if (!keep) paint('<p class="sub">Loading repos…</p>'); await loadRepos(); if (!S.repos || S.tab !== "repos") return; }
+  const R = S.repos, clients = R.clients || {}, running = !!(S.data.health.running_pid || (S.prog && S.prog.running));
+  const needs = R.repos.filter((r) => r.status !== "ignored" && r.checks.some((c) => c.level === "question" || c.level === "error"));
+  const byClient = {};
+  R.repos.forEach((r) => { const k = r.status === "confirmed" ? r.client : (r.status === "ignored" ? "~ignored" : "~unmapped"); (byClient[k] = byClient[k] || []).push(r); });
+  const btn = (r) => '<button type="button" class="repo-btn" data-path="' + esc(r.path) + '" aria-current="' + (S.repoSel === r.path) + '"><span class="n">' + esc(r.name) +
+    '</span><span class="p">' + esc(r.path) + '</span><span class="tags">' + repoTags(r) + "</span></button>";
+  let list = "";
+  if (needs.length) list += '<div class="grp">Needs your answer</div>' + needs.map(btn).join("");
+  Object.keys(byClient).sort().forEach((k) => {
+    const label = k === "~unmapped" ? "Not mapped yet" : k === "~ignored" ? "Ignored" : ((clients[k] || {}).name || k);
+    list += '<div class="grp">' + esc(label) + "</div>" + byClient[k].map(btn).join("");
+  });
+  if (!R.repos.length) list = '<div style="padding:8px"><p class="sub">No repos yet. Repos are found in the Claude Code sessions a run reads. Click <strong>Scan past sessions</strong> to find them now, without calling Claude.</p></div>';
+  const clientOpts = Object.keys(clients).sort().map((c) => '<option value="' + esc(c) + '">' + esc((clients[c].name || c) + " (" + c + ")") + "</option>").join("");
+  let form = "";
+  if (S.showClientForm || !Object.keys(clients).length) {
+    form = '<section class="glass card"><h2 style="margin-bottom:6px">Add a client' + hq("client") + '</h2><p class="sub" style="margin-bottom:10px">Markers are words that identify the client in folder names or git remotes, for example <code>acme, acme-corp</code>. They drive suggestions and ownership checks.</p>' +
+      '<div class="form-row"><input id="cId" placeholder="id, e.g. acme" aria-label="Client id" style="width:140px"><input id="cName" placeholder="Name, e.g. Acme Corp" aria-label="Client name" style="flex:1 1 200px"><input id="cMarkers" placeholder="markers, comma separated" aria-label="Markers" style="flex:1 1 200px"><button class="btn primary" type="button" id="cSave">Save client</button></div></section>';
+  }
+  const sel = R.repos.find((r) => r.path === S.repoSel) || needs[0] || R.repos[0];
+  if (sel) S.repoSel = sel.path;
+  let det = '<div class="glass card"><p class="sub">Pick a repo on the left.</p></div>';
+  let lastMap = null;
+  if (sel) {
+    const cname = (id) => ((clients[id] || {}).name || id);
+    const answer = (c, i) => {
+      const a = c.action;
+      if (a === "confirm_owner") return '<button class="btn primary" type="button" data-q="confirm">Yes, it belongs to ' + esc(cname(c.client)) + '</button><button class="btn" type="button" data-q="pick">No, change client</button>';
+      if (a === "pick_client") return '<button class="btn" type="button" data-q="pick">Choose the client</button><button class="btn" type="button" data-q="ignore">Ignore this repo</button>';
+      if (a === "review") return '<button class="btn primary" type="button" data-q="review" data-cycle="' + esc(c.cycle) + '">Review the proposal</button>';
+      if (a === "map") return '<button class="btn" type="button" data-q="map"' + (running ? " disabled" : "") + ">Map now</button>";
+      if (a === "ignore") return '<button class="btn" type="button" data-q="ignore">Ignore this repo</button>';
+      if (a === "open_context") return '<button class="btn" type="button" data-q="open">Open context</button>';
+      if (a === "move_context") return '<button class="btn primary" type="button" data-q="move">Move it here</button><button class="btn" type="button" data-q="map"' + (running ? " disabled" : "") + ">Map fresh instead</button>";
+      return "";
+    };
+    const qs = sel.checks.map((c, i) => '<div class="q ' + (c.level === "error" ? "err" : c.level === "warn" ? "w" : "") + '"><strong>' + (c.level === "question" ? "?" : c.level === "error" ? "!" : "i") +
+      '</strong><div class="qb"><span>' + esc(c.msg) + '</span><div class="qa">' + answer(c, i) + "</div></div></div>").join("");
+    lastMap = S.data.cycles.find((d) => d.type === "map" && d.repo && d.repo.path === sel.path) || null;
+    det = '<section class="glass card"><div class="row between"><h2 style="font-size:20px">' + esc(sel.name) + '</h2><span class="tags">' + repoTags(sel) + "</span></div>" +
+      '<dl class="kv"><dt>Path</dt><dd class="mono">' + esc(sel.path) + '</dd><dt>Remote</dt><dd class="mono">' + esc(sel.remote || "none") +
+      "</dd><dt>Sessions</dt><dd>" + (sel.sessions || 0) + " · last " + esc(fmtTime(sel.last_seen)) + "</dd>" +
+      (sel.context_path ? '<dt>Context</dt><dd class="mono">' + esc(sel.context_path) + (sel.context_exists ? " · updated " + esc(fmtTime(sel.context_updated)) : " · not created yet") + "</dd>" : "") +
+      (sel.mapped_at ? "<dt>Last map</dt><dd>" + esc(fmtTime(sel.mapped_at)) + "</dd>" : "") + "</dl></section>";
+    if (qs) det += '<section class="glass card"><h2 style="margin-bottom:10px">Checks and questions' + hq("questions") + '</h2><div style="display:flex;flex-direction:column;gap:8px">' + qs + "</div></section>";
+    det += '<section class="glass card"><h2 style="margin-bottom:10px">Which client does it belong to?' + hq("assign") + '</h2><div class="form-row">' +
+      '<select id="rClient" aria-label="Client"><option value="">Choose…</option>' + clientOpts + '<option value="_ignore">Ignore this repo</option></select>' +
+      '<input id="rName" value="' + esc(sel.name) + '" aria-label="Short repo name" style="width:180px">' +
+      '<button class="btn primary" type="button" id="rAssign">' + (sel.status === "confirmed" ? "Save" : "Confirm") + "</button>" +
+      '<button class="btn" type="button" id="rNewClient">New client…</button></div>' +
+      '<p class="sub" style="margin-top:8px">Confirming creates its inbox. Its context is injected into Claude Code sessions in this folder from then on.</p></section>';
+    det += '<section class="glass card"><h2 style="margin-bottom:6px">Context' + hq("context") + '</h2><p class="sub" style="margin-bottom:12px">Map reads the repo once, read-only, and proposes a context file. It becomes active when you adopt the proposal. Nightly cycles then keep it current from your sessions and git log.</p><div class="form-row">' +
+      (sel.pending_map ? '<button class="btn primary" type="button" data-q="review" data-cycle="' + esc(sel.pending_map) + '">Review the proposal</button>' : "") +
+      '<button class="btn' + (sel.pending_map ? "" : " primary") + '" type="button" id="rMap"' + (sel.status === "confirmed" && !running ? "" : " disabled") + ">" + (sel.context_exists || sel.pending_map ? "Re-map" : "Map") + "</button>" + hq("map") +
+      (sel.context_exists ? '<button class="btn" type="button" id="rOpen">Open context</button>' : "") +
+      (sel.inbox_path ? '<button class="btn" type="button" id="rInbox">Open inbox (' + (sel.inbox_lines || 0) + ")</button>" + hq("inbox") : "") +
+      (lastMap ? '<button class="btn link" type="button" id="rLast">Last map: ' + esc(lastMap.needs_review ? "waiting for review" : (lastMap.decision || lastMap.status)) + "</button>" : "") + "</div></section>";
+    if (sel.status === "confirmed" && sel.client) {
+      det += '<section class="glass card"><h2 style="margin-bottom:6px">Instructions for agents' + hq("instructions") + '</h2><p class="sub" style="margin-bottom:10px">Placed in front of the context when a Claude Code session starts here. Tell agents how to use it. Up to 4,096 characters each.</p>' +
+        '<label class="fl" for="riRepo"><span>For this repo</span><span class="sub">' + esc(sel.name) + "</span></label>" +
+        '<textarea id="riRepo" class="small" maxlength="4096" placeholder="For example: Use envs/ for anything per account. Ask before touching modules/net.">' + esc(sel.instructions || "") + "</textarea>" +
+        '<label class="fl" for="riClient" style="margin-top:10px"><span>For every ' + esc(cname(sel.client)) + " repo</span></label>" +
+        '<textarea id="riClient" class="small" maxlength="4096" placeholder="For example: Small PRs with a link to the ADR.">' + esc((clients[sel.client] || {}).instructions || "") + "</textarea>" +
+        '<div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn primary" type="button" id="riSave">Save instructions</button></div></section>';
+    }
+  }
+  paint('<div class="row between"><h1>Repos</h1><div class="row"><button class="btn" type="button" id="scan"' + (running ? " disabled" : "") + '>Scan past sessions</button>' + hq("scan") + '<button class="btn" type="button" id="addClient">Add client</button></div></div>' + form +
+    '<div class="repo-layout"><div class="glass repo-list">' + list + '</div><div class="repo-detail">' + det + "</div></div>", keep);
+  $("#addClient").onclick = () => { S.showClientForm = !S.showClientForm; viewRepos(true); };
+  $("#scan").onclick = (e) => busy(e.currentTarget, async () => {
+    try { const j = await api("/api/scan", { days: 30 }); toast(j.message); S.dockHidden = false; await tick(); } catch (err) { toast(err.message, true); }
+  });
+  if ($("#cSave")) $("#cSave").onclick = (e) => busy(e.currentTarget, async () => {
+    const id = $("#cId").value.trim(); if (!id) { toast("Client id is required", true); return; }
+    try { const j = await api("/api/client", { id: id, name: $("#cName").value.trim(), markers: $("#cMarkers").value.split(",") }); toast(j.message); S.showClientForm = false; await loadRepos(); viewRepos(true); } catch (err) { toast(err.message, true); }
+  });
+  document.querySelectorAll(".repo-btn").forEach((b) => b.onclick = () => { S.repoSel = b.dataset.path; viewRepos(true); });
+  if (!sel) return;
+  $("#rClient").value = sel.status === "ignored" ? "_ignore" : (sel.client || "");
+  $("#rAssign").onclick = (e) => busy(e.currentTarget, async () => {
+    const c = $("#rClient").value; if (!c) { toast("Choose a client first", true); return; }
+    try { const j = await api("/api/assign", { path: sel.path, client: c, name: $("#rName").value.trim() }); toast(j.message); S.files = null; await loadRepos(); viewRepos(true); } catch (err) { toast(err.message, true); }
+  });
+  $("#rNewClient").onclick = () => { S.showClientForm = true; viewRepos(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  if ($("#rMap")) $("#rMap").onclick = (e) => busy(e.currentTarget, async () => {
+    try { const j = await api("/api/map", { path: sel.path }); toast(j.message); S.dockHidden = false; await tick(); } catch (err) { toast(err.message, true); }
+  });
+  const openIn = async (path) => { S.tab = "memory"; S.files = null; S.editing = false; await openFile(path); renderHeader(); render(false); window.scrollTo(0, 0); };
+  const pick = () => { const el = $("#rClient"); el.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => el.focus(), 250); };
+  document.querySelectorAll("[data-q]").forEach((b) => b.onclick = (e) => {
+    const q = b.dataset.q, btn = e.currentTarget;
+    if (q === "pick") return pick();
+    if (q === "review") return goReview(b.dataset.cycle);
+    if (q === "open") return openIn(sel.context_path);
+    if (q === "map") return $("#rMap") && $("#rMap").click();
+    return busy(btn, async () => {
+      try {
+        const j = q === "confirm" ? await api("/api/confirm_owner", { path: sel.path })
+          : q === "move" ? await api("/api/move_context", { path: sel.path })
+          : await api("/api/assign", { path: sel.path, client: "_ignore" });
+        toast(j.message); await loadRepos(); viewRepos(true);
+      } catch (err) { toast(err.message, true); }
+    });
+  });
+  if ($("#rOpen")) $("#rOpen").onclick = () => openIn(sel.context_path);
+  if ($("#rInbox")) $("#rInbox").onclick = () => openIn(sel.inbox_path);
+  if ($("#rLast")) $("#rLast").onclick = () => goReview(lastMap.id);
+  if ($("#riSave")) $("#riSave").onclick = (e) => busy(e.currentTarget, async () => {
+    try {
+      const msgs = [];
+      if ($("#riRepo").value.trim() !== (sel.instructions || "").trim()) msgs.push((await api("/api/instructions", { kind: "repo", key: sel.path, text: $("#riRepo").value })).message);
+      if ($("#riClient").value.trim() !== ((clients[sel.client] || {}).instructions || "").trim()) msgs.push((await api("/api/instructions", { kind: "client", key: sel.client, text: $("#riClient").value })).message);
+      toast(msgs.join(" ") || "Nothing changed."); await loadRepos(); viewRepos(true);
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+/* ---------- Logs ---------- */
+async function loadLogs() {
+  const f = S.logF;
+  const qs = "?limit=400&level=" + encodeURIComponent(f.level) + (f.event ? "&event=" + encodeURIComponent(f.event) : "") +
+    (f.q ? "&q=" + encodeURIComponent(f.q) : "") + (f.cycle ? "&cycle=" + encodeURIComponent(f.cycle) : "");
+  try { S.logs = (await api("/api/logs" + qs)).events; } catch (e) { S.logs = S.logs || []; }
+}
+function logRows() {
+  return (S.logs || []).map((e) => {
+    const d = e.data ? "<details><summary>details</summary><pre>" + esc(JSON.stringify(e.data, null, 2)) + "</pre></details>" : "";
+    return '<tr><td class="t">' + esc(new Date(e.ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })) +
+      '</td><td><span class="lvl ' + esc(e.level) + '">' + esc(e.level) + '</span></td><td class="mono">' + esc(e.event) + "</td><td>" + esc(e.msg) + d +
+      "</td><td>" + (e.cycle ? '<button class="btn link" type="button" data-d="' + esc(e.cycle) + '">' + esc(e.cycle.slice(-4)) + "</button>" : "") +
+      '</td><td class="mono">' + esc(e.actor || "") + "</td></tr>";
+  }).join("") || '<tr><td colspan="6" class="sub">No log events match.</td></tr>';
+}
+function bindLogRows() { document.querySelectorAll("[data-d]").forEach((b) => b.onclick = () => goReview(b.dataset.d)); }
+async function viewLogs(keep) {
+  if (!S.logs) { if (!keep) paint('<p class="sub">Loading logs…</p>'); await loadLogs(); if (S.tab !== "logs") return; }
+  const f = S.logF;
+  paint('<div class="row between"><h1>Logs' + hq("logs") + '</h1><span class="sub">' + esc(S.data.health.home) + "/logs/somna.log</span></div>" +
+    '<div class="glass filters"><label class="sub" for="lLevel">Level</label><select id="lLevel">' + ["debug", "info", "warn", "error"].map((l) => "<option" + (l === f.level ? " selected" : "") + ">" + l + "</option>").join("") +
+    '</select><input id="lEvent" placeholder="event, e.g. engine" value="' + esc(f.event) + '" aria-label="Event prefix"><input id="lQ" placeholder="search text" value="' + esc(f.q) + '" aria-label="Search">' +
+    '<input id="lCycle" placeholder="run id" value="' + esc(f.cycle) + '" aria-label="Run id"><button class="btn" type="button" id="lGo">Apply</button>' +
+    '<label class="sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="lAuto"' + (S.logsAuto ? " checked" : "") + "> live</label></div>" +
+    '<div class="glass scroll logs" style="padding:0"><table><thead><tr><th>When</th><th>Level</th><th>Event</th><th>What happened</th><th>Run</th><th>By</th></tr></thead><tbody id="logBody">' + logRows() + "</tbody></table></div>", keep);
+  const apply = (btn) => busy(btn, async () => {
+    S.logF = { level: $("#lLevel").value, event: $("#lEvent").value.trim(), q: $("#lQ").value.trim(), cycle: $("#lCycle").value.trim() };
+    await loadLogs(); const b = $("#logBody"); if (b) { b.innerHTML = logRows(); bindLogRows(); }
+  });
+  $("#lGo").onclick = (e) => apply(e.currentTarget); $("#lLevel").onchange = () => apply(null);
+  ["#lEvent", "#lQ", "#lCycle"].forEach((id) => { $(id).onkeydown = (e) => { if (e.key === "Enter") apply(null); }; });
+  $("#lAuto").onchange = (e) => { S.logsAuto = e.target.checked; };
+  bindLogRows();
+}
+async function liveLogs() {
+  if (S.tab !== "logs" || !S.logsAuto || typing() || document.querySelector(".logs details[open]")) return;
+  await loadLogs();
+  const b = $("#logBody"); if (b) { b.innerHTML = logRows(); bindLogRows(); }
+}
+
+/* ---------- Health ---------- */
+function viewHealth(keep) {
+  const H = S.data.health, pct = Math.min(100, (H.memory_kb / H.memory_limit_kb) * 100), icon = { ok: "✓", warn: "!", fail: "×" };
+  paint('<div class="row between"><h1>Health</h1><span class="sub">Same checks as <code>somna doctor</code></span></div>' +
+    '<div class="checks">' + H.checks.map((c) => '<div class="check glass"><span class="ico ' + c.status + '" aria-label="' + c.status + '">' + icon[c.status] +
+      "</span><div><p><strong>" + esc(c.title) + '</strong></p><p class="d">' + esc(c.detail) + "</p></div></div>").join("") + "</div>" +
+    '<div class="glass card"><div class="row between"><strong>Memory size</strong><span class="sub">' + H.memory_kb + " KB of " + H.memory_limit_kb + " KB</span></div>" +
+    '<div class="bar"><div style="width:' + pct.toFixed(1) + '%"></div></div></div>' +
+    '<div class="glass card"><h2 style="margin-bottom:8px">Where things are</h2><p class="mono" style="word-break:break-all">Memory repo: ' + esc(H.home) +
+    "<br>Session transcripts: " + esc(H.projects_dir) + "<br>Logs: " + esc(H.home) + "/logs/</p></div>", keep);
+}
+
+/* ---------- Start here: first-use guide with live status ---------- */
+const GUIDE = {
+  claude: ["Claude Code is installed and signed in", "Somna runs Claude Code in the background, so it has to work on this Mac.", null, "If this is not done: run claude once in Terminal, sign in, then /exit."],
+  hooks: ["Context hooks are installed", "They add each repo's context when a Claude Code session or subagent starts in it.", null, "If this is not done: run ./install.sh again from Somna folder."],
+  personal: ["Make memory yours", "Replace the example text in me/, work/ and engine/steering.md, so the cycle knows who you are, how you work and what it must never change.", ["Open my memory", () => { S.tab = "memory"; S.files = null; S.file = null; renderHeader(); render(false); }]],
+  client: ["Add your first client", "One per client, with the words that identify it in folder names or git remotes. Each client's knowledge stays in its own folder.", ["Add a client", () => { S.tab = "repos"; S.showClientForm = true; renderHeader(); render(false); }]],
+  scan: ["Find your repos", "Reads your past Claude Code sessions to find the git repos you worked in. No Claude call, no cost.", ["Scan past sessions", async (btn) => { try { const j = await api("/api/scan", { days: 30 }); toast(j.message); S.dockHidden = false; await tick(); } catch (e) { toast(e.message, true); } }]],
+  confirm: ["Confirm which client each repo belongs to", "In Repos, pick the client for each repo and click Confirm. Repos you do not want can be ignored.", ["Open Repos", () => { S.tab = "repos"; renderHeader(); render(false); }]],
+  map: ["Map a repo and adopt its context", "Map reads the repo once, read-only, and proposes its context file. Adopt it under Review; from then on every session in that repo starts with it.", ["Open Repos", () => { S.tab = "repos"; renderHeader(); render(false); }]],
+  settings: ["Check the schedule and models", "Pick when the nightly cycle runs, whether you want a weekly deeper pass, which models to use and your spend limits. Check confirms a model works with your Claude Code.", ["Open Settings", () => { S.tab = "settings"; renderHeader(); render(false); }]],
+  cycle: ["Run your first cycle", "Reads your recent sessions and proposes updates. When nothing looks wrong it is saved automatically and you get a one-line summary; otherwise it waits for you under Review.", ["Run a cycle", () => openSheet()]],
+};
+async function loadSetup() { try { S.setup = await api("/api/setup"); } catch (e) { /* keep last */ } }
+async function viewStart(keep) {
+  if (!S.setup) { if (!keep) paint('<p class="sub">Loading…</p>'); await loadSetup(); if (S.tab !== "start" || !S.setup) return; }
+  const U = S.setup, next = U.steps.find((x) => !x.done);
+  const rows = U.steps.map((x, i) => {
+    const g = GUIDE[x.id] || [x.id, ""];
+    return '<div class="stepc glass' + (x.done ? " done" : "") + (next && next.id === x.id ? " next" : "") + '"><div class="num">' + (x.done ? "✓" : i + 1) + '</div><div class="b"><h3>' + esc(g[0]) + "</h3><p>" + esc(g[1]) + "</p>" +
+      (x.detail ? '<div class="d">' + esc(x.detail) + "</div>" : "") + (!x.done && g[3] ? '<p style="color:var(--gold-ink)">' + esc(g[3]) + "</p>" : "") + "</div>" +
+      (g[2] ? '<button class="btn' + (next && next.id === x.id ? " primary" : "") + '" type="button" data-step="' + x.id + '">' + esc(g[2][0]) + "</button>" : "") + "</div>";
+  }).join("");
+  paint('<div class="row between"><div><h1>Start here</h1><p class="sub" style="margin-top:6px">' + U.done + " of " + U.total + " done" + (U.done >= U.total ? ". You are set up." : ". The highlighted step is next.") + "</p></div>" +
+    '<button class="btn" type="button" id="stRefresh">Refresh</button></div>' +
+    '<div class="bar"><div style="width:' + Math.round(100 * U.done / U.total) + '%"></div></div>' +
+    '<div class="steps-list">' + rows + "</div>" +
+    '<section class="glass card"><h2 style="margin-bottom:6px">After that, every day</h2><p class="sub">Work in Claude Code as usual, starting each session inside its repo folder. Each session checks the context against the code and reports corrections to the repo inbox. Every night the cycle curates the day\'s sessions and saves the result by itself when nothing looks wrong. In the morning you get a one-line summary: answer the few questions, or click Undo if you do not like a change. Only unusual cycles wait for your review.</p></section>' +
+    '<section class="glass card"><h2 style="margin-bottom:6px">Help on every screen</h2><p class="sub">Click a <span class="hq" style="pointer-events:none">?</span> next to a button or section to see what it does, how long it takes and what it changes.</p></section>', keep);
+  document.querySelectorAll("[data-step]").forEach((b) => b.onclick = (e) => busy(e.currentTarget, async () => { await GUIDE[b.dataset.step][2][1](b); }));
+  $("#stRefresh").onclick = (e) => busy(e.currentTarget, async () => { await loadSetup(); renderHeader(); viewStart(true); });
+}
+
+/* ---------- Settings ---------- */
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+async function loadSettings() {
+  try { S.settings = await api("/api/settings"); } catch (e) { toast(e.message, true); return; }
+  try { S.models = await api("/api/models"); } catch (e) { S.models = { models: [], source: "", note: e.message }; }
+}
+function modelPick(id, val) {
+  const list = (S.models && S.models.models) || [], known = list.some((m) => m.id === val);
+  const ck = (S.settings.model_checks || {})[val || "(default)"];
+  return '<select id="' + id + '" data-model style="flex:1 1 260px;max-width:460px"><option value="">Claude Code default</option>' +
+    list.map((m) => '<option value="' + esc(m.id) + '"' + (m.id === val ? " selected" : "") + ">" + esc(m.label + (m.recommended ? "  ·  recommended" : "") + (m.lifecycle && m.lifecycle !== "active" ? "  ·  " + m.lifecycle : "")) + "</option>").join("") +
+    (val && !known ? '<option value="' + esc(val) + '" selected>' + esc(val) + " (custom)</option>" : "") + '<option value="__custom">Other: enter an id or ARN…</option></select>' +
+    '<button class="btn" type="button" data-check="' + id + '">Check</button><span class="chk ' + (ck ? (ck.ok ? "ok" : "bad") : "") + '" id="' + id + 'Chk">' +
+    esc(ck ? (ck.ok ? "✓ works with your Claude Code · " + fmtTime(ck.at) + (ck.used && ck.used.length ? " · " + ck.used.join(", ") : "") : "✗ failed " + fmtTime(ck.at)) : "not checked yet") + "</span>";
+}
+function numRow(key, label, unit, ph) {
+  const v = S.settings.settings[key], f = S.settings.fields[key];
+  return '<label class="k" for="f_' + key + '">' + esc(label) + hq(key) + '</label><div class="v"><input type="number" id="f_' + key + '" data-key="' + key + '" value="' + (v == null ? "" : esc(v)) + '"' +
+    (f.min != null ? ' min="' + f.min + '"' : "") + (f.max != null ? ' max="' + f.max + '"' : "") + (f.type === "money" ? ' step="0.5"' : "") + (ph ? ' placeholder="' + esc(ph) + '"' : "") + "><span class=\"sub\">" + esc(unit || "") + "</span></div>";
+}
+function boolRow(key, label) {
+  return '<label class="k" for="f_' + key + '">' + esc(label) + hq(key) + '</label><div class="v"><label class="switch"><input type="checkbox" id="f_' + key + '" data-key="' + key + '"' + (S.settings.settings[key] ? " checked" : "") + "> on</label></div>";
+}
+async function viewSettings(keep) {
+  if (!S.settings) { if (!keep) paint('<p class="sub">Loading settings…</p>'); await loadSettings(); if (S.tab !== "settings" || !S.settings) return; }
+  const X = S.settings, set = X.settings, sc = X.schedule.schedule, n = sc.nightly, w = sc.weekly, M = S.models || {};
+  const mac = X.platform === "Darwin";
+  let h = '<div class="row between"><div><h1>Settings</h1><p class="sub" style="margin-top:6px">Saved to engine/config.json and committed, so every change can be undone.</p></div></div>';
+  h += '<section class="glass card"><h2 style="margin-bottom:10px">Schedule</h2><p class="sub" style="margin-bottom:12px">Next nightly: <strong>' + esc(X.schedule.nightly_next) + "</strong> · next weekly: <strong>" + esc(X.schedule.weekly_next) + "</strong>" +
+    (X.schedule.loaded === false ? ' · <span style="color:var(--del-fg)">the scheduler is not loaded, re-run install.sh</span>' : !mac ? " · runs on macOS only" : "") + '</p><div class="set">' +
+    '<label class="k" for="nOn">Nightly cycle' + hq("nightly") + '</label><div class="v"><label class="switch"><input type="checkbox" id="nOn"' + (n.enabled ? " checked" : "") + '> on</label><input type="time" id="nTime" value="' + esc(n.time) + '" aria-label="Nightly time">' +
+    '<div class="daychips">' + DAYS.map((d, i) => '<label><input type="checkbox" data-nday="' + i + '"' + (n.days.indexOf(i) >= 0 ? " checked" : "") + "> " + d + "</label>").join("") + "</div></div>" +
+    '<label class="k" for="wOn">Weekly cycle' + hq("weekly") + '</label><div class="v"><label class="switch"><input type="checkbox" id="wOn"' + (w.enabled ? " checked" : "") + '> on</label>' +
+    '<select id="wDay" aria-label="Weekly day">' + DAYS.map((d, i) => '<option value="' + i + '"' + (i === w.day ? " selected" : "") + ">" + d + "</option>").join("") + '</select><input type="time" id="wTime" value="' + esc(w.time) + '" aria-label="Weekly time">' +
+    '<span class="sub">reads the last</span><input type="number" id="wDays" min="1" max="30" value="' + esc(w.since_days) + '" aria-label="Weekly window in days" style="width:80px"><span class="sub">days</span></div>' +
+    '<label class="k" for="wModel">Weekly model' + hq("weekly_model") + '</label><div class="v">' + modelPick("wModel", w.model) + "</div>" +
+    '<label class="k" for="wInstr">Weekly instructions</label><div class="v"><textarea id="wInstr" class="small" maxlength="4096" style="flex:1 1 100%">' + esc(w.instructions) + "</textarea></div></div></section>";
+  h += '<section class="glass card"><h2 style="margin-bottom:6px">Models</h2><p class="sub" style="margin-bottom:12px">List from: <strong>' + esc(M.source || "") + "</strong>" + hq("models_source") + " · " + esc(M.note || "") +
+    ' <button class="btn link" type="button" id="mRefresh">Refresh list</button></p><div class="set">' +
+    '<label class="k" for="f_model">Nightly and manual cycles' + hq("model") + '</label><div class="v">' + modelPick("f_model", set.model) + "</div>" +
+    '<label class="k" for="f_map_model">Map' + hq("map_model") + '</label><div class="v">' + modelPick("f_map_model", set.map_model) + "</div></div></section>";
+  h += '<section class="glass card"><h2 style="margin-bottom:12px">Limits and cost</h2><div class="set">' +
+    numRow("max_budget_usd", "Spend cap per run", "US$ · empty = no cap", "no cap") + numRow("map_max_budget_usd", "Spend cap per map", "US$ · empty = no cap", "no cap") +
+    numRow("max_turns", "Turn limit per run", "turns · empty = no limit", "no limit") + numRow("timeout_minutes", "Time limit per run", "minutes") +
+    numRow("max_sessions", "Sessions per cycle", "1 to " + X.limits.max_sessions) + numRow("parallel_runs", "Clients at the same time", "runs") +
+    numRow("default_since_hours", "First-run window", "hours") + "</div></section>";
+  h += '<section class="glass card"><h2 style="margin-bottom:12px">Memory</h2><div class="set">' +
+    numRow("max_memory_kb", "Memory size limit", "KB · files over " + X.limits.memory_file_kb + " kB are flagged") + numRow("run_digest_budget_kb", "Reading budget per client run", "KB · about " + fmtTok((set.run_digest_budget_kb || 0) * 256) + " tokens") + numRow("session_max_kb", "Most one session can take", "KB") +
+    numRow("context_max_chars", "Repo context size", "characters") + numRow("remap_after_commits", "Re-map suggestion", "commits") + numRow("stale_after_days", "Clean up current state after", "days") + "</div></section>";
+  h += '<section class="glass card"><h2 style="margin-bottom:12px">Review</h2><div class="set">' +
+    '<label class="k" for="f_review_mode">Review mode' + hq("review_mode") + '</label><div class="v"><select id="f_review_mode" data-key="review_mode">' +
+      '<option value="auto"' + (set.review_mode === "auto" ? " selected" : "") + '>Adopt automatically when safe</option><option value="manual"' + (set.review_mode === "manual" ? " selected" : "") + ">Ask me for everything</option></select></div>" +
+    numRow("held_expiry_days", "Questions expire after", "days") +
+    boolRow("hold_low_confidence", "Hold low-confidence changes") + boolRow("auto_close_empty", "Close empty cycles") + boolRow("notify", "Notifications") + boolRow("stream_events", "Live events") + "</div></section>";
+  h += '<div class="savebar glass"><button class="btn primary" type="button" id="setSave">Save settings</button><span class="sub" id="setState">No changes yet.</span></div>';
+  paint(h, keep);
+  const dirty = () => { S.settingsDirty = true; $("#setState").textContent = "Unsaved changes."; };
+  document.querySelectorAll("#main input, #main select, #main textarea").forEach((el) => el.addEventListener("input", dirty));
+  document.querySelectorAll("select[data-model]").forEach((sel) => sel.addEventListener("change", () => {
+    if (sel.value !== "__custom") return;
+    const v = window.prompt("Model id, alias or Bedrock inference profile ARN:", "");
+    if (!v) { sel.value = ""; return; }
+    const o = document.createElement("option"); o.value = v.trim(); o.textContent = v.trim() + " (custom)"; sel.insertBefore(o, sel.lastElementChild); sel.value = o.value;
+  }));
+  document.querySelectorAll("[data-check]").forEach((b) => b.onclick = (e) => busy(e.currentTarget, async () => {
+    const id = b.dataset.check, m = $("#" + id).value, out = $("#" + id + "Chk");
+    out.className = "chk"; out.textContent = "checking… (a one-line test through Claude Code)";
+    try { const j = await api("/api/check_model", { model: m === "__custom" ? "" : m }); out.className = "chk ok"; out.textContent = "✓ " + j.message; }
+    catch (err) { out.className = "chk bad"; out.textContent = "✗ " + err.message; }
+  }));
+  $("#mRefresh").onclick = (e) => busy(e.currentTarget, async () => { try { S.models = await api("/api/models?refresh=1"); toast("Model list refreshed from: " + S.models.source); viewSettings(true); } catch (err) { toast(err.message, true); } });
+  $("#setSave").onclick = (e) => busy(e.currentTarget, async () => {
+    const settings = {};
+    document.querySelectorAll("#main [data-key]").forEach((el) => { settings[el.dataset.key] = el.type === "checkbox" ? el.checked : (el.value === "" ? null : (el.type === "number" ? Number(el.value) : el.value)); });
+    settings.model = $("#f_model").value === "__custom" ? "" : $("#f_model").value; settings.map_model = $("#f_map_model").value === "__custom" ? "" : $("#f_map_model").value;
+    const schedule = { nightly: { enabled: $("#nOn").checked, time: $("#nTime").value, days: Array.from(document.querySelectorAll("[data-nday]")).filter((c) => c.checked).map((c) => +c.dataset.nday) },
+      weekly: { enabled: $("#wOn").checked, day: +$("#wDay").value, time: $("#wTime").value, since_days: +$("#wDays").value, model: $("#wModel").value === "__custom" ? "" : $("#wModel").value, instructions: $("#wInstr").value } };
+    try { const j = await api("/api/settings", { settings: settings, schedule: schedule }); toast(j.message); S.settingsDirty = false; await loadSettings(); S.setup = null; await loadSetup(); renderHeader(); viewSettings(true); $("#setState").textContent = "Saved."; }
+    catch (err) { toast(err.message, true); $("#setState").textContent = err.message; }
+  });
+}
+
+/* ---------- progress dock: driven by the structured log, updates in place ---------- */
+function showDock(on) { $("#dock").classList.toggle("show", !!on && !S.dockHidden); }
+function paintDock(p) {
+  $("#dock").classList.remove("done");
+  $("#dTitle").textContent = p.title || "Working";
+  $("#dInfo").textContent = DOCK_INFO[p.type === "map" ? "map" : /^Scan/.test(p.title || "") ? "scan" : "cycle"];
+  $("#dStep").textContent = p.step || "";
+  const pct = Math.max(2, Math.min(100, p.percent || 0));
+  $("#dBar").style.width = pct + "%"; $("#dMeter").setAttribute("aria-valuenow", String(Math.round(pct)));
+  $("#dPct").textContent = Math.round(pct) + "%";
+  const tk = p.tokens || {}, tot = (tk.input || 0) + (tk.output || 0), mdl = p.model && p.model !== "claude-code-default" ? p.model : "";
+  $("#dTime").textContent = fmtDur(p.elapsed) + (tot ? " · " + fmtTok(tot) + " tokens" : "");
+  $("#dOps").textContent = (p.memory_reads || p.memory_writes) ? "memory: " + (p.memory_reads || 0) + " read · " + (p.memory_writes || 0) + " written" + (mdl ? " · " + mdl : "") : mdl;
+  const c = $("#dCancel"); c.hidden = !p.id; if (!c.classList.contains("is-busy")) { c.disabled = !!p.cancel_requested; c.textContent = p.cancel_requested ? "Canceling…" : "Cancel run"; }
+  c.onclick = (e) => { if (!confirm("Cancel this run? Its partial output is deleted and memory stays as it is.")) return;
+    busy(e.currentTarget, async () => { try { const j = await api("/api/cancel", { id: p.id }); toast(j.message); } catch (err) { toast(err.message, true); } await tick(); }); };
+  $("#dSteps").innerHTML = (p.steps || []).map((s) => '<span class="stp ' + esc(s.state) + '">' + (s.state === "done" ? "✓ " : "") + esc(s.label) + "</span>").join("");
+  const live = (p.live || []).filter((e) => e.kind === "tool" || e.kind === "text" || e.kind === "tool_error").slice(-4);
+  $("#dFeed").innerHTML = live.length ? live.map((e) => e.kind === "text" ? '<div class="say">“' + esc(e.text) + "”</div>"
+      : e.kind === "tool_error" ? '<div><span class="tg w">error</span>' + esc(e.text) + "</div>"
+      : '<div><span class="tg' + (e.memory === "write" ? " w" : e.memory === "read" ? " r" : "") + '">' + esc(e.memory ? (e.memory === "write" ? "write" : "read") : e.tool) + "</span>" + esc(e.target) + "</div>").join("")
+    : (p.recent || []).slice(-3).map((e) => "<div>" + esc(e.event + "  " + e.msg) + "</div>").join("");
+  $("#dOpen").hidden = true;
+}
+function paintDone(last) {
+  $("#dock").classList.add("done");
+  const failed = last && last.status === "failed", canceled = last && last.status === "canceled";
+  $("#dCancel").hidden = true; $("#dOps").textContent = ""; $("#dInfo").textContent = "";
+  $("#dTitle").textContent = !last ? "Done" : canceled ? "Canceled" : failed ? "Run failed" : last.needs_review ? "Ready for review" : "Finished";
+  $("#dStep").textContent = last ? (last.error || last.diffstat || last.note || "") : "";
+  if (canceled) $("#dStep").textContent = "Nothing was changed.";
+  $("#dBar").style.width = "100%"; $("#dPct").textContent = failed || canceled ? "stopped" : "100%";
+  $("#dFeed").innerHTML = ""; $("#dSteps").innerHTML = "";
+  $("#dOpen").hidden = !last; $("#dOpen").textContent = last && last.needs_review ? "Review it" : "Open";
+  $("#dOpen").onclick = () => { showDock(false); goReview(last.id); };
+}
+let tickTimer = null;
+async function tick() {
+  clearTimeout(tickTimer);
+  let p;
+  try { p = await api("/api/progress"); } catch (e) { tickTimer = setTimeout(tick, 5000); return; }
+  S.prog = p;
+  if (p.running) {
+    if (!S.wasRunning) { S.wasRunning = true; if (S.data) renderHeader(); }
+    paintDock(p); showDock(true);
+    tickTimer = setTimeout(tick, 1500);
+    return;
+  }
+  if (S.wasRunning) {
+    S.wasRunning = false; paintDone(p.last); showDock(true);
+    const failed = p.last && p.last.status === "failed";
+    const canceled = p.last && p.last.status === "canceled";
+    toast(failed ? "The run failed. Open it to see why." : canceled ? "Canceled." : "Finished.", failed);
+    S.autoPicked = false; S.files = null;
+    if (S.file && !S.editing) await openFile(S.file.path, true);
+    await loadRepos();
+    await refresh(true);
+    setTimeout(() => { if (!S.wasRunning) showDock(false); }, 12000);
+  }
+  tickTimer = setTimeout(tick, 10000);
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest ? e.target.closest("[data-help]") : null, pop = $("#pop");
+  if (!b) { if (!pop.hidden && !pop.contains(e.target)) pop.hidden = true; return; }
+  e.preventDefault(); e.stopPropagation();
+  if (!pop.hidden && pop.dataset.key === b.dataset.help) { pop.hidden = true; return; }
+  const h = HELP[b.dataset.help] || [b.dataset.help, ""];
+  pop.innerHTML = "<strong>" + esc(h[0]) + "</strong>" + esc(h[1]); pop.dataset.key = b.dataset.help; pop.hidden = false;
+  const r = b.getBoundingClientRect(), w = pop.offsetWidth;
+  pop.style.left = Math.max(16, Math.min(window.scrollX + r.left - 20, window.scrollX + document.documentElement.clientWidth - w - 16)) + "px";
+  pop.style.top = (window.scrollY + r.bottom + 8) + "px";
+}, true);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#pop").hidden = true; });
+$("#helpBtn").onclick = () => { S.tab = "start"; renderHeader(); render(false); window.scrollTo(0, 0); };
+$("#pendingPill").onclick = () => {
+  if (S.data && S.data.pending.length) return goReview(S.data.pending[0]);
+  S.tab = "questions"; renderHeader(); render(false); window.scrollTo(0, 0);
+};
+$("#dHide").onclick = () => { S.dockHidden = true; showDock(false); };
+$("#dLogs").onclick = () => { S.tab = "logs"; S.logs = null; renderHeader(); render(false); window.scrollTo(0, 0); };
+
+/* ---------- wiring ---------- */
+const SH = { list: null, picked: new Set() };
+function shSrc() { return (document.querySelector('input[name="shSrc"]:checked') || {}).value; }
+function shCount() { const n = $("#shInstr").value.length; $("#shCount").textContent = n.toLocaleString() + " / 4,096"; }
+function shPicked() {
+  const n = SH.picked.size;
+  const kb = (SH.list || []).filter((x) => SH.picked.has(x.id)).reduce((a, x) => a + (x.size_kb || 0), 0);
+  $("#shSel").textContent = n + " selected · 1 to 100" + (n ? " · " + Math.round(kb) + " KB to read" + (SH.budget ? " (budget " + SH.budget + " KB per client)" : "") : "");
+  document.querySelectorAll("#shList input").forEach((c) => { c.disabled = !c.checked && n >= 100; });
+}
+async function shLoad() {
+  $("#shList").innerHTML = '<p class="sub" style="padding:8px">Loading…</p>';
+  try { const r = await api("/api/sessions?days=" + $("#shDays").value); SH.list = r.sessions; SH.cap = r.session_max_kb; SH.budget = r.budget_kb; } catch (e) { $("#shList").innerHTML = '<p class="sub" style="padding:8px">' + esc(e.message) + "</p>"; return; }
+  $("#shList").innerHTML = SH.list.length ? SH.list.map((x) => '<label class="srow"><input type="checkbox" value="' + esc(x.id) + '"' + (SH.picked.has(x.id) ? " checked" : "") + '><span style="min-width:0"><span class="tl">' +
+    esc(x.title || "(no text)") + '</span><br><span class="m">' + esc((x.started ? fmtTime(x.started) + " → " : "") + fmtTime(x.modified) + " · " + x.repo + (x.client ? " · " + x.client : "") + (x.subagents ? " · " + x.subagents + " subagent" + (x.subagents === 1 ? "" : "s") : "") +
+      (x.size_kb != null ? " · " + (x.size_kb < 0.1 ? "<0.1" : x.size_kb) + " KB · ~" + fmtTok(x.est_tokens) + " tokens" : "") + " · " + x.id) + (x.size_kb != null && SH.cap && x.size_kb > SH.cap ? ' <span class="badge b-review">larger than one session may take</span>' : "") + "</span></span></label>").join("")
+    : '<p class="sub" style="padding:8px">No sessions in this period.</p>';
+  document.querySelectorAll("#shList input").forEach((c) => c.onchange = () => { if (c.checked) SH.picked.add(c.value); else SH.picked.delete(c.value); shPicked(); });
+  shPicked();
+}
+function openSheet() {
+  if (!S.data) return;
+  const H = S.data.health, sel = $("#shModel"), cur = sel.value;
+  sel.innerHTML = '<option value="">' + esc(H.default_model ? "Default (" + H.default_model + ")" : "Claude Code default") + "</option>" +
+    (H.models || []).map((m) => '<option value="' + esc(m) + '">' + esc(m) + "</option>").join("");
+  sel.value = cur || "";
+  $("#sheetWrap").hidden = false; shCount(); $("#shInstr").focus();
+}
+function shReset() {
+  $("#shInstr").value = ""; $("#shModel").value = ""; SH.picked.clear(); SH.list = null;
+  document.querySelector('input[name="shSrc"][value="since"]').checked = true; $("#shPick").hidden = true;
+}
+function closeSheet() { $("#sheetWrap").hidden = true; $("#runBtn").focus(); }
+$("#runBtn").onclick = () => openSheet();
+$("#shClose").onclick = closeSheet; $("#shCancel").onclick = closeSheet;
+$("#sheetWrap").onclick = (e) => { if (e.target.id === "sheetWrap") closeSheet(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheetWrap").hidden) closeSheet(); });
+$("#shInstr").oninput = shCount;
+document.querySelectorAll('input[name="shSrc"]').forEach((r) => r.onchange = () => { $("#shPick").hidden = shSrc() !== "pick"; if (shSrc() === "pick" && !SH.list) shLoad(); });
+$("#shDays").onchange = shLoad;
+$("#shStart").onclick = (e) => {
+  const body = { instructions: $("#shInstr").value.trim(), model: $("#shModel").value };
+  if (shSrc() === "pick") { if (!SH.picked.size) { toast("Choose at least one session", true); return; } body.session_ids = Array.from(SH.picked); }
+  busy(e.currentTarget, async () => {
+    try { const j = await api("/api/run", body); toast(j.message); closeSheet(); shReset(); S.dockHidden = false; await tick(); }
+    catch (err) { toast(err.message, true); }
+  });
+};
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
+  if (S.tab === "memory" && S.editing && !confirm("Leave without saving?")) return;
+  if (S.tab === "settings" && S.settingsDirty && b.dataset.tab !== "settings" && !confirm("Leave Settings without saving?")) return;
+  if (b.dataset.tab === "settings") { S.settings = null; S.settingsDirty = false; }
+  if (b.dataset.tab === "start") S.setup = null;
+  S.editing = false; S.conflict = null; S.draft = null; S.tab = b.dataset.tab; if (S.tab === "logs") S.logs = null;
+  renderHeader(); render(false); window.scrollTo(0, 0);
+  if (S.tab === "repos") loadRepos().then(() => { if (S.tab === "repos" && !typing()) viewRepos(true); });
+  if (S.tab === "memory") api("/api/memory").then(async (j) => { S.files = j.files; if (S.file && !S.editing) await openFile(S.file.path, true); if (S.tab === "memory" && !S.editing) viewMemory(true); }).catch(() => {});
+});
+/* quiet background refresh: only re-render when something actually changed, never while a job runs or you type */
+async function quiet() {
+  try {
+    if (!(S.tab === "memory" && S.editing) && !typing() && !S.wasRunning) {
+      const before = S.sig, picked = await loadState(), sig = signature(S.data);
+      renderHeader();
+      if ((sig !== before || picked) && S.tab !== "settings") { S.sig = sig; await loadDetail(); if (S.tab === "repos") await loadRepos(); if (S.tab === "start") await loadSetup(); render(true); }
+    }
+    if (S.tab === "memory" && !S.editing && S.file && !typing()) {
+      const was = S.file.sha; await openFile(S.file.path, true);
+      if (S.file && S.file.sha !== was) { viewMemory(true); toast("This file was just updated (a cycle or an agent saved it). Showing the new version."); }
+    }
+    await liveLogs();
+  } catch (e) { /* server restarting, try again next time */ }
+  setTimeout(quiet, S.tab === "logs" ? 5000 : 30000);
+}
+Promise.all([loadSetup(), loadState().catch(() => null)]).then(() => {
+  if (S.setup && S.setup.done < S.setup.total && !(S.data && S.data.pending.length)) S.tab = "start";
+  return refresh(false);
+}).then(() => { tick(); loadRepos(); setTimeout(quiet, 30000); });
+</script>
+</body>
+</html>
